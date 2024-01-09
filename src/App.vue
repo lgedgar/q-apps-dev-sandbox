@@ -6,9 +6,9 @@ import HelloWorld from './components/HelloWorld.vue'
 <script>
 export default {
     mounted() {
-        // nb. for some reason the home route does not load automatically
+        // nb. for some reason the current route does not load automatically
         // in the context of a published q-app, so we do that explicitly
-        this.$router.push("/")
+        this.$router.push(window._qdnPath)
     },
 }
 </script>
