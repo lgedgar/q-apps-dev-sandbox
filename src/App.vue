@@ -3,6 +3,16 @@ import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 </script>
 
+<script>
+export default {
+    mounted() {
+        // nb. for some reason the home route does not load automatically
+        // in the context of a published q-app, so we do that explicitly
+        this.$router.push("/")
+    },
+}
+</script>
+
 <template>
   <header>
     <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
