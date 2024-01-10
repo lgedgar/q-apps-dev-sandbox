@@ -1,51 +1,74 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <script>
 export default {
+
     mounted() {
         // nb. for some reason the current route does not load automatically
         // in the context of a published q-app, so we do that explicitly
-        this.$router.push(window._qdnPath)
+        if (window._qdnPath !== undefined) {
+            this.$router.push(window._qdnPath)
+        }
+    },
+
+    methods: {
+
+        openDocs() {
+            qortalRequest({
+                action: "OPEN_NEW_TAB",
+                qortalLink: "qortal://APP/Q-Docs",
+            })
+        },
     },
 }
 </script>
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+    <div style="display: flex; align-items: center;">
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <h1 class="is-size-1"
+          style="flex-grow: 1;">
+        Q-Apps Dev Sandbox
+      </h1>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+      <o-button @click="openDocs()"
+                variant="primary"
+                >
+        <!-- icon-left="arrow-right" -->
+        Q-Docs (open new tab)
+      </o-button>
+
     </div>
+
+    <nav>
+      <RouterLink to="/">Home</RouterLink>
+      <RouterLink to="/qortalRequest/"><span class="is-family-code">qortalRequest()</span></RouterLink>
+      <RouterLink to="/about">About</RouterLink>
+    </nav>
   </header>
 
-  <RouterView />
+  <div style="padding: 2rem;">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+header {
+    padding: 1rem;
 }
 
 nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
 }
 
 nav a.router-link-exact-active {
@@ -56,40 +79,4 @@ nav a.router-link-exact-active:hover {
   background-color: transparent;
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
 </style>
