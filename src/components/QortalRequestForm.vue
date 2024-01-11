@@ -80,7 +80,9 @@ export default {
             for (var param of this.action.params) {
                 if (params[param.name] === undefined) {
                     if (params.required) {
-                        params[param.name] = ""
+                        // TODO: not sure what this needs to be yet
+                        // params[param.name] = ""
+                        params[param.name] = null
                     }
                 }
             }
@@ -99,6 +101,12 @@ export default {
                 }
                 this.callMade = true
             }
+
+            this.$nextTick(() => {
+                this.$refs.callResult.scrollIntoView({
+                    behavior: 'smooth',
+                })
+            })
         },
 
         resetForm() {
@@ -116,7 +124,8 @@ export default {
       <o-field v-for="param in action.params"
                :key="param.name"
                :label="param.name"
-               :variant="getFieldVariant(param)">
+               :variant="getFieldVariant(param)"
+               horizontal>
 
         <o-checkbox v-if="param.type === Boolean"
                     v-model="testParams[param.name]"
@@ -147,7 +156,8 @@ export default {
 
     </div>
 
-    <div v-show="callMade" class="block">
+    <div v-show="callMade" class="block"
+         ref="callResult">
 
       <div class="block">
         <o-button variant="primary"
