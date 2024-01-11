@@ -41,7 +41,7 @@ export default {
     computed: {
 
         generatedCode() {
-            let code = "qortalRequest({\n"
+            let code = "const response = await qortalRequest({\n"
                 + "  action: \"" + this.action.action + "\",\n"
             for (var param of this.action.params) {
                 let value = this.testParams[param.name]
@@ -146,7 +146,7 @@ export default {
         </o-button>
       </div>
 
-      <o-field label="Result">
+      <o-field label="Response">
         <VCodeBlock :code="callResult"
                     highlightjs />
       </o-field>
