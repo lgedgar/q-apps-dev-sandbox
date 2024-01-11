@@ -13,14 +13,13 @@ defineProps({
 export default {
 
     data() {
-        let testParams = {}
 
-        // TODO: maybe add default values for some params?
-        // for (var param of this.action.params) {
-        //     if (param.defaultValue) {
-        //         testParams[param.name] = param.defaultValue()
-        //     }
-        // }
+        let testParams = {}
+        for (var param of this.action.params) {
+            if (param.default) {
+                testParams[param.name] = param.default
+            }
+        }
 
         return {
             callMade: false,
@@ -112,29 +111,40 @@ export default {
 <template>
   <div>
 
-    <o-field v-for="param in action.params"
-             :key="param.name"
-             :label="param.name"
-             :variant="getFieldVariant(param)">
-      <o-input v-model="testParams[param.name]"
-               @input="resetForm()" />
-    </o-field>
+    <div style="width: 50%;">
 
-    <p v-if="!action.params.length"
-       class="block">
-      Does not require any other params.
-    </p>
+      <o-field v-for="param in action.params"
+               :key="param.name"
+               :label="param.name"
+               :variant="getFieldVariant(param)">
 
-    <div class="block">
-      <VCodeBlock :code="generatedCode"
-                  highlightjs />
-    </div>
+        <o-checkbox v-if="param.type === Boolean"
+                    v-model="testParams[param.name]"
+                    @input="resetForm()" />
 
-    <div v-show="!callMade" class="block">
-      <o-button variant="primary"
-                @click="invokeCode()">
-        Make the call
-      </o-button>
+        <o-input v-else
+                 v-model="testParams[param.name]"
+                 @input="resetForm()" />
+
+      </o-field>
+
+      <p v-if="!action.params.length"
+         class="block">
+        Does not require any other params.
+      </p>
+
+      <div class="block">
+        <VCodeBlock :code="generatedCode"
+                    highlightjs />
+      </div>
+
+      <div v-show="!callMade" class="block">
+        <o-button variant="primary"
+                  @click="invokeCode()">
+          Make the call
+        </o-button>
+      </div>
+
     </div>
 
     <div v-show="callMade" class="block">

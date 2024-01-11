@@ -8,10 +8,36 @@ export default {
 
         const actions = {
 
-            GET_USER_ACCOUNT: {
-                description: "Fetch the address and public key for the current user account.",
-                requiresUserApproval: true,
-                params: [],
+            FETCH_QDN_RESOURCE: {
+                description: "Fetch raw data from file with supplied service, name, and relative path.",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                    },
+                    {
+                        name: 'filepath',
+                        type: String,
+                    },
+                    {
+                        name: 'encoding',
+                        type: String,
+                    },
+                    {
+                        name: 'rebuild',
+                        type: Boolean,
+                    },
+                ],
             },
 
             GET_ACCOUNT_DATA: {
@@ -21,6 +47,152 @@ export default {
                         name: 'address',
                         type: String,
                         required: true,
+                    },
+                ],
+            },
+
+            GET_QDN_RESOURCE_METADATA: {
+                description: "Fetch raw metadata from resource with supplied service, name, identifier, and relative path.",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                        required: true,
+                    },
+                ],
+            },
+
+            GET_QDN_RESOURCE_PROPERTIES: {
+                description: "Get properties of a QDN resource",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                    },
+                ],
+            },
+
+            GET_QDN_RESOURCE_STATUS: {
+                description: "Get status of arbitrary resource with supplied service, name and identifier.",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                    },
+                    {
+                        name: 'build',
+                        type: Boolean,
+                    },
+                ],
+            },
+
+            GET_QDN_RESOURCE_URL: {
+                description: "Get URL to load a QDN resource. Note: this returns a \"Resource does not exist\" error if a non-existent resource is requested.",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                    },
+                    {
+                        name: 'path',
+                        type: String,
+                    },
+                ],
+            },
+
+            GET_USER_ACCOUNT: {
+                description: "Fetch the address and public key for the current user account.",
+                requiresUserApproval: true,
+                params: [],
+            },
+
+            LIST_QDN_RESOURCES: {
+                description: "List arbitrary resources available on chain, optionally filtered by service and identifier.",
+                params: [
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'name',
+                        type: String,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                    },
+                    {
+                        name: 'default',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'includeStatus',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'includeMetadata',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'followedOnly',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'excludeBlocked',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'limit',
+                        type: Number,
+                        default: 20,
+                    },
+                    {
+                        name: 'offset',
+                        type: Number,
+                    },
+                    {
+                        name: 'reverse',
+                        type: Boolean,
                     },
                 ],
             },
