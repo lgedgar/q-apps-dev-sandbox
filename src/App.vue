@@ -46,6 +46,7 @@ export default {
     <nav>
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/qortalRequest/"><span class="is-family-code">qortalRequest()</span></RouterLink>
+      <RouterLink to="/QDN/">QDN</RouterLink>
       <RouterLink to="/about">About</RouterLink>
     </nav>
   </header>

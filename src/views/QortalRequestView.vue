@@ -74,6 +74,7 @@ export default {
 
             GET_QDN_RESOURCE_PROPERTIES: {
                 description: "Get properties of a QDN resource",
+                willDownloadData: true,
                 params: [
                     {
                         name: 'service',
@@ -277,6 +278,11 @@ export default {
       <o-notification v-if="action.requiresUserApproval"
                       variant="info">
         This action requires user approval.
+      </o-notification>
+
+      <o-notification v-if="action.willDownloadData"
+                      variant="warning">
+        This action may cause resource data to be downloaded.
       </o-notification>
 
       <div class="block">

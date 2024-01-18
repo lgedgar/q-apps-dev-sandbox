@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import QortalRequestView from '../views/QortalRequestView.vue'
+import QDNView from '../views/QDNView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,11 @@ const router = createRouter({
       path: '/qortalRequest/:action',
       name: 'qortalRequestAction',
       component: QortalRequestView,
+    },
+    {
+      path: '/QDN/',
+      name: 'QDN',
+      component: QDNView,
     },
     {
       path: '/about',
