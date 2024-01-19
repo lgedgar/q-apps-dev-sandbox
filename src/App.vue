@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import Feedback from './components/Feedback.vue'
 </script>
 
 <script>
@@ -27,7 +28,7 @@ export default {
 
 <template>
   <header>
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; gap: 1rem; align-items: center;">
 
       <h1 class="is-size-1"
           style="flex-grow: 1;">
@@ -40,6 +41,8 @@ export default {
         <!-- icon-left="arrow-right" -->
         Q-Docs (open new tab)
       </o-button>
+
+      <Feedback />
 
     </div>
 

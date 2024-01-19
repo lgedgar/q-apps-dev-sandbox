@@ -51,6 +51,41 @@ export default {
                 ],
             },
 
+            GET_ACCOUNT_NAMES: {
+                description: "List all names owned by address.",
+                params: [
+                    {
+                        name: 'address',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'limit',
+                        type: Number,
+                        default: 20,
+                    },
+                    {
+                        name: 'offset',
+                        type: Number,
+                    },
+                    {
+                        name: 'reverse',
+                        type: Boolean,
+                    },
+                ],
+            },
+
+            GET_NAME_DATA: {
+                description: "Info on registered name.",
+                params: [
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                    },
+                ],
+            },
+
             GET_QDN_RESOURCE_METADATA: {
                 description: "Fetch raw metadata from resource with supplied service, name, identifier, and relative path.",
                 params: [
@@ -194,6 +229,17 @@ export default {
                     {
                         name: 'reverse',
                         type: Boolean,
+                    },
+                ],
+            },
+
+            OPEN_PROFILE: {
+                description: "Opens a user's profile if they have one. Note: this will open a modal with \"This name has no profile\" if that is the case.",
+                params: [
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
                     },
                 ],
             },

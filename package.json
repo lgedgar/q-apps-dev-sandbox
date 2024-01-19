@@ -13,6 +13,7 @@
     "@oruga-ui/theme-bulma": "^0.2.11",
     "@wdns/vue-code-block": "^2.3.1",
     "pinia": "^2.1.7",
+    "short-unique-id": "^5.0.3",
     "vue": "^3.3.11",
     "vue-router": "^4.2.5"
   },

@@ -1,0 +1,10 @@
+
+import packageData from '../package.json'
+
+var appsettings = {
+    appTitle: packageData.name,
+    appVersion: packageData.version,
+    maintainerName: 'Your Name Here',
+};
+
+export default appsettings;
