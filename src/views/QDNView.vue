@@ -85,6 +85,7 @@ export default {
             downloading: false,
             downloadSupportedServices: [
                 'DOCUMENT',
+                'THUMBNAIL',
             ],
         }
     },
@@ -133,12 +134,25 @@ export default {
             if (resource.service == 'DOCUMENT') {
                 return await this.downloadDocument(resource)
 
+            } else if (resource.service == 'THUMBNAIL') {
+                return await this.downloadThumbnail(resource)
+
             } else {
                 alert(`TODO: download not yet implemented for service: ${resource.service}`)
             }
         },
 
         async fetchResource(resource) {
+
+            // TODO: why does FETCH_QDN_RESOURCE not work for THUMBNAIL?
+            // i must be doing something wrong, always get bad data for
+            // that, but at least this way does work okay...
+            if (resource.service == 'THUMBNAIL') {
+                const url = `/arbitrary/THUMBNAIL/${resource.name}/${resource.identifier || 'default'}`
+                const response = await fetch(url)
+                return await response.blob()
+            }
+
             return await qortalRequest({
                 action: 'FETCH_QDN_RESOURCE',
                 service: resource.service,
@@ -165,6 +179,58 @@ export default {
                     blob: JSON.stringify(response, null, 2),
                     filename: `${resource.identifier || resource.name}.json`,
                     mimeType: 'application/json',
+                })
+                if (!response) {
+                    alert("save returned false!?")
+                    this.downloading = false
+                    return
+                }
+
+            } catch (error) {
+                alert("save error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            alert("File has been saved.")
+            this.downloading = false
+        },
+
+        async sniffMimeType(resource) {
+            const response = await qortalRequest({
+                action: 'GET_QDN_RESOURCE_PROPERTIES',
+                service: resource.service,
+                name: resource.name,
+                identifier: resource.identifier,
+            })
+            return response?.mimeType
+        },
+
+        async downloadThumbnail(resource) {
+            this.downloading = true
+            let response
+
+            try {
+                response = await this.fetchResource(resource)
+            } catch (error) {
+                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            const mimeType = await this.sniffMimeType(resource)
+            const extension = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+            }[mimeType] || 'dat'
+
+            try {
+                response = await qortalRequest({
+                    action: 'SAVE_FILE',
+                    blob: response,
+                    filename: `${resource.identifier || resource.name}.${extension}`,
+                    mimeType: mimeType,
                 })
                 if (!response) {
                     alert("save returned false!?")
