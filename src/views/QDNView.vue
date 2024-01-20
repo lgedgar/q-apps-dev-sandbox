@@ -83,6 +83,7 @@ export default {
             data: null,
             searching: false,
             downloading: false,
+            downloadResourceStatus: null,
             downloadSupportedServices: [
                 'DOCUMENT',
                 'PLAYLIST',
@@ -133,25 +134,18 @@ export default {
 
         isDownloadable(resource) {
             if (this.downloadSupportedServices.includes(resource.service)) {
-                // TODO: until we can show download progress, avoid video
-                // resources which aren't already downloaded to node
-                if (resource.service == 'VIDEO' && resource?.status?.status != 'READY') {
-                    return false
-                }
                 return true
             }
             return false
         },
 
         async downloadResource(resource) {
-            this.downloading = true
             let blob
 
             try {
                 blob = await this.fetchResource(resource)
             } catch (error) {
                 alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
                 return
             }
 
@@ -176,17 +170,55 @@ export default {
             }
 
             await this.saveFile(resource, blob, {mimeType, extension})
-            this.downloading = false
         },
 
         async fetchResource(resource) {
+            this.downloading = true
+
             // TODO: for some reason FETCH_QDN_RESOURCE does not work
             // as i expect it to, and/or i was somehow using it wrong.
             // at any rate it kept giving me bad data, so now am just
-            // using the core API directly to fetch
+            // using the core API directly to fetch all resources
             const url = `/arbitrary/${resource.service}/${resource.name}/${resource.identifier || 'default'}`
-            const response = await fetch(url)
-            return await response.blob()
+            let response = fetch(url)
+
+            // start tracking progress, to show user
+            this.downloadProgressUpdate(resource)
+
+            // wait for the fetch to complete, then return blob
+            response = await response
+            const blob = await response.blob()
+            this.downloading = false
+            return blob
+        },
+
+        async downloadProgressUpdate(resource) {
+
+            // get current status
+            const response = await qortalRequest({
+                action: 'GET_QDN_RESOURCE_STATUS',
+                service: resource.service,
+                name: resource.name,
+                identifier: resource.identifier,
+            })
+
+            // update progress display
+            this.downloadResourceStatus = response
+
+            // keep doing this until download completes
+            if (this.downloading) {
+                setTimeout(this.downloadProgressUpdate, 1000, resource)
+            }
+        },
+
+        async sniffMimeType(resource) {
+            const response = await qortalRequest({
+                action: 'GET_QDN_RESOURCE_PROPERTIES',
+                service: resource.service,
+                name: resource.name,
+                identifier: resource.identifier,
+            })
+            return response?.mimeType
         },
 
         async saveFile(resource, blob, options) {
@@ -210,14 +242,14 @@ export default {
                 // TODO: this seems awfully fragile but not sure how else to
                 // check for the "user rejected" scenario, which can safely
                 // be ignored.  (other errors should be shown)
-                if (error.error != "User declined request") {
+                if (! ["User declined request",
+                       "User declined the download",
+                      ].includes(error.error)) {
                     alert("save error:\n\n" + JSON.stringify(error, null, 2))
                 }
                 return false
             }
 
-            // TODO: probably no need for this alert?
-            alert("File has been saved.")
             return true
         },
     },
@@ -226,6 +258,40 @@ export default {
 
 <template>
   <div class="qdn">
+    <o-loading v-model:active="downloading" full-page>
+      <div class="card" style="min-width: 50rem;">
+        <div class="card-header">
+          <div class="card-header-title">Download in progress...</div>
+        </div>
+        <div class="card-content">
+
+          <div v-if="downloadResourceStatus" style="white-space: nowrap;">
+            <o-field label="Status" horizontal>
+              {{ downloadResourceStatus.status }}
+            </o-field>
+            <o-field label="ID" horizontal>
+              {{ downloadResourceStatus.id }}
+            </o-field>
+            <o-field label="Title" horizontal>
+              {{ downloadResourceStatus.title }}
+            </o-field>
+            <o-field label="Description" horizontal>
+              {{ downloadResourceStatus.description }}
+            </o-field>
+            <o-field label="Local Chunk Count" horizontal>
+              {{ downloadResourceStatus.localChunkCount }}
+            </o-field>
+            <o-field label="Total Chunk Count" horizontal>
+              {{ downloadResourceStatus.totalChunkCount }}
+            </o-field>
+            <o-field label="Percent Loaded" horizontal>
+              {{ downloadResourceStatus.percentLoaded }}
+            </o-field>
+          </div>
+
+        </div>
+      </div>
+    </o-loading>
 
     <h2 class="is-size-2">QDN</h2>
     <p class="block">
