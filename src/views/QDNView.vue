@@ -72,10 +72,12 @@ export default {
                 'VOICE_PRIVATE',
                 'WEBSITE',
             ],
+            activeTab: 0,
             service: null,
             name: null,
             identifier: null,
-            data: [],
+            limit: 20,
+            data: null,
             searching: false,
         }
     },
@@ -84,11 +86,20 @@ export default {
 
         async onSearchFormSubmit(event) {
             event.preventDefault()
+
+            if (!this.limit || this.limit < 1) {
+                alert("Must specify a valid limit.")
+                return
+            }
+
             this.searching = true
 
             let params = {
                 action: 'LIST_QDN_RESOURCES',
-                service: this.service,
+                limit: this.limit,
+            }
+            if (this.service) {
+                params.service = this.service
             }
             if (this.name) {
                 params.name = this.name
@@ -107,16 +118,19 @@ export default {
 <template>
   <div class="qdn">
 
+    <h2 class="is-size-2">QDN</h2>
     <p class="block">
-      Discover existing QDN resources by filtering as you like.
+      Find out what's in the Qortal Data Network.
     </p>
 
-    <form ref="searchForm" @submit="onSearchFormSubmit">
-      <div style="display: flex; gap: 1rem; align-items: end;">
-        <o-field grouped>
+    <o-tabs v-model="activeTab">
+
+      <o-tab-item :value="0" label="LIST_QDN_RESOURCES">
+        <form ref="searchForm" @submit="onSearchFormSubmit">
 
           <o-field label="Service">
             <o-select v-model="service">
+              <option :value="null">(any)</option>
               <option v-for="svc in services"
                       :key="svc"
                       :value="svc">
@@ -125,44 +139,75 @@ export default {
             </o-select>
           </o-field>
 
-          <o-field label="Name (exact)">
-            <o-input v-model="name" />
+          <o-field grouped>
+            <o-field label="Name (exact)">
+              <o-input v-model="name" />
+            </o-field>
           </o-field>
 
-          <o-field label="Identifier (exact)">
-            <o-input v-model="identifier" />
+          <o-field grouped>
+            <o-field label="Identifier (exact)">
+              <o-input v-model="identifier" />
+            </o-field>
           </o-field>
 
-        </o-field>
+          <o-field grouped>
+            <o-field label="Limit">
+              <o-input v-model="limit" type="number" />
+            </o-field>
+          </o-field>
 
-        <div style="padding-bottom: 0.75rem;">
-          <o-button variant="primary"
-                    native-type="submit"
-                    :disabled="searching">
-            {{ searching ? "Working, please wait..." : "Search" }}
-          </o-button>
-        </div>
+          <div style="padding-bottom: 0.75rem;">
+            <o-button variant="primary"
+                      native-type="submit"
+                      :disabled="searching">
+              {{ searching ? "Working, please wait..." : "Search" }}
+            </o-button>
+          </div>
 
-      </div>
-    </form>
+          <div v-if="data">
 
-    <o-field label="Resources">
-      <o-table :data="data"
-               :loading="searching">
-        <o-table-column label="Name" v-slot="{ row }">
-          {{ row.name }}
-        </o-table-column>
-        <o-table-column label="Identifier" v-slot="{ row }">
-          {{ row.identifier }}
-        </o-table-column>
-        <o-table-column label="Size" v-slot="{ row }">
-          {{ formatBytes(row.size) }}
-        </o-table-column>
-        <o-table-column label="Created" v-slot="{ row }">
-          {{ new Date(row.created) }}
-        </o-table-column>
-      </o-table>
-    </o-field>
+            <p class="block">
+              found {{ data.length}} result{{ data.length == 1 ? '' : 's' }}
+            </p>
 
+            <o-table :data="data || []"
+                     :loading="searching">
+              <o-table-column label="Service"
+                              v-slot="{ row }">
+                {{ row.service }}
+              </o-table-column>
+              <o-table-column label="Name"
+                              v-slot="{ row }">
+                {{ row.name }}
+              </o-table-column>
+              <o-table-column label="Identifier"
+                              v-slot="{ row }">
+                {{ row.identifier }}
+              </o-table-column>
+              <o-table-column label="Size"
+                              v-slot="{ row }">
+                {{ formatBytes(row.size) }}
+              </o-table-column>
+              <o-table-column label="Created"
+                              v-slot="{ row }">
+                {{ new Date(row.created) }}
+              </o-table-column>
+              <o-table-column label="Updated"
+                              v-slot="{ row }">
+                {{ row.updated ? new Date(row.updated) : '' }}
+              </o-table-column>
+            </o-table>
+
+          </div>
+
+        </form>
+      </o-tab-item>
+
+      <!-- <o-tab-item :value="1" label="SEARCH_QDN_RESOURCES"> -->
+      <!--   <p class="block">TODO</p> -->
+      <!-- </o-tab-item> -->
+
+    </o-tabs>
   </div>
 </template>
