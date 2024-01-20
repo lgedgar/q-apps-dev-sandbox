@@ -24,18 +24,22 @@ export default {
                     {
                         name: 'identifier',
                         type: String,
+                        description: "Optional. If omitted, the default resource is returned, or you can alternatively use the keyword \"default\"",
                     },
                     {
                         name: 'filepath',
                         type: String,
+                        description: "Required only for resources containing more than one file",
                     },
                     {
                         name: 'encoding',
                         type: String,
+                        description: "Optional. If omitted, data is returned in raw form",
                     },
                     {
                         name: 'rebuild',
                         type: Boolean,
+                        description: "If true, any existing cached data will be invalidated.",
                     },
                 ],
             },
@@ -87,7 +91,7 @@ export default {
             },
 
             GET_QDN_RESOURCE_METADATA: {
-                description: "Fetch raw metadata from resource with supplied service, name, identifier, and relative path.",
+                description: "Fetch raw metadata from resource with supplied service, name, identifier, and relative path.  If the resource doesn't have metadata, a 404 will be returned.",
                 params: [
                     {
                         name: 'service',
@@ -102,7 +106,7 @@ export default {
                     {
                         name: 'identifier',
                         type: String,
-                        required: true,
+                        description: "Optional",
                     },
                 ],
             },
@@ -124,6 +128,7 @@ export default {
                     {
                         name: 'identifier',
                         type: String,
+                        description: "Optional",
                     },
                 ],
             },
@@ -143,10 +148,12 @@ export default {
                     {
                         name: 'identifier',
                         type: String,
+                        description: "Optional",
                     },
                     {
                         name: 'build',
                         type: Boolean,
+                        description: "Optional - request that the resource is fetched & built in the background",
                     },
                 ],
             },
@@ -171,6 +178,7 @@ export default {
                     {
                         name: 'path',
                         type: String,
+                        description: "optional - not needed if resource contains only one file",
                     },
                 ],
             },
@@ -190,39 +198,39 @@ export default {
                         required: true,
                     },
                     {
-                        // Optional (exact match)
                         name: 'name',
                         type: String,
+                        description: "Optional (exact match)",
                     },
                     {
-                        // Optional (exact match)
                         name: 'identifier',
                         type: String,
+                        description: "Optional (exact match)",
                     },
                     {
-                        // Optional
                         name: 'default',
                         type: Boolean,
+                        description: "Optional",
                     },
                     {
-                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeStatus',
                         type: Boolean,
+                        description: "Optional - will take time to respond, so only request if necessary",
                     },
                     {
-                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeMetadata',
                         type: Boolean,
+                        description: "Optional - will take time to respond, so only request if necessary",
                     },
                     {
-                        // Optional - include followed names only
                         name: 'followedOnly',
                         type: Boolean,
+                        description: "Optional - include followed names only",
                     },
                     {
-                        // Optional - exclude blocked content
                         name: 'excludeBlocked',
                         type: Boolean,
+                        description: "Optional - exclude blocked content",
                     },
                     {
                         name: 'limit',
@@ -251,6 +259,94 @@ export default {
                 ],
             },
 
+            PUBLISH_QDN_RESOURCE: {
+                description: "Note: this publishes a single, base64-encoded file.  Multi-file resource publishing (such as a WEBSITE or GIF_REPOSITORY) is handled via PUBLISH_MULTIPLE_QDN_RESOURCES.",
+                requiresUserApproval: true,
+                params: [
+                    {
+                        name: 'name',
+                        type: String,
+                        required: true,
+                        description: "Publisher must own the registered name - use GET_ACCOUNT_NAMES for a list",
+                    },
+                    {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'identifier',
+                        type: String,
+                        description: "Optional",
+                    },
+                    {
+                        name: 'data64',
+                        type: String,
+                        description: "base64 string. Remove this param if you are putting in a file. see next param.",
+                    },
+                    {
+                        name: 'file',
+                        type: File,
+                        description: "File Object. Remove this param if you are putting in a base64 string.",
+                    },
+                    {
+                        name: 'filename',
+                        type: String,
+                        description: "Optional - to help apps determine the file's type",
+                    },
+                    {
+                        name: 'title',
+                        type: String,
+                        description: "Optional",
+                    },
+                    {
+                        name: 'description',
+                        type: String,
+                        description: "Optional",
+                    },
+                    {
+                        name: 'category',
+                        type: String,
+                        description: "Optional",
+                    },
+                    {
+                        name: 'tag1',
+                        type: String,
+                        // description: "Optional",
+                    },
+                    {
+                        name: 'tag2',
+                        type: String,
+                        // description: "Optional",
+                    },
+                    {
+                        name: 'tag3',
+                        type: String,
+                        // description: "Optional",
+                    },
+                    {
+                        name: 'tag4',
+                        type: String,
+                        // description: "Optional",
+                    },
+                    {
+                        name: 'tag5',
+                        type: String,
+                        // description: "Optional",
+                    },
+                    {
+                        name: 'encrypt',
+                        type: Boolean,
+                        description: "Optional - to be used with a private service",
+                    },
+                    {
+                        name: 'recipientPublicKey',
+                        type: String,
+                        description: "Only required if encrypt is set to true",
+                    },
+                ],
+            },
+
             SEARCH_QDN_RESOURCES: {
                 description: "Search arbitrary resources available on chain, optionally filtered by service. If default is set to true, only resources without identifiers will be returned.",
                 params: [
@@ -260,59 +356,59 @@ export default {
                         type: String,
                     },
                     {
-                        // Optional - searches both "identifier" and "name" fields
                         name: 'query',
                         type: String,
+                        description: "Optional - searches both \"identifier\" and \"name\" fields",
                     },
                     {
-                        // Optional - searches only the "identifier" field
                         name: 'identifier',
                         type: String,
+                        description: "Optional - searches only the \"identifier\" field",
                     },
                     {
-                        // Optional - searches only the "name" field
                         name: 'name',
                         type: String,
+                        description: "Optional - searches only the \"name\" field",
                     },
                     {
-                        // Optional - if true, only the beginning of fields are matched in all of the above filters
                         name: 'prefix',
                         type: Boolean,
+                        description: "Optional - if true, only the beginning of fields are matched in all of the above filters",
                     },
                     {
-                        // Optional - if true, partial name matches are excluded
                         name: 'exactMatchNames',
                         type: Boolean,
+                        description: "Optional - if true, partial name matches are excluded",
                     },
                     {
-                        // Optional - if true, only resources without identifiers are returned
                         name: 'default',
                         type: Boolean,
+                        description: "Optional - if true, only resources without identifiers are returned",
                     },
                     {
-                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeStatus',
                         type: Boolean,
+                        description: "Optional - will take time to respond, so only request if necessary",
                     },
                     {
-                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeMetadata',
                         type: Boolean,
+                        description: "Optional - will take time to respond, so only request if necessary",
                     },
                     {
-                        // Optional - will only return results if they are from a name included in supplied list
                         name: 'nameListFilter',
                         type: String,
+                        description: "Optional - will only return results if they are from a name included in supplied list",
                     },
                     {
-                        // Optional - include followed names only
                         name: 'followedOnly',
                         type: Boolean,
+                        description: "Optional - include followed names only",
                     },
                     {
-                        // Optional - exclude blocked content
                         name: 'excludeBlocked',
                         type: Boolean,
+                        description: "Optional - exclude blocked content",
                     },
                     {
                         name: 'limit',

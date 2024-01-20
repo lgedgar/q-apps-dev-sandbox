@@ -123,9 +123,18 @@ export default {
 
       <o-field v-for="param in action.params"
                :key="param.name"
-               :label="param.name"
                :variant="getFieldVariant(param)"
                horizontal>
+
+          <template #label>
+            <o-tooltip v-if="param.description"
+                       :label="param.description"
+                       teleport>
+              <o-icon icon="circle-info" />
+              <span>{{ param.name }}</span>
+            </o-tooltip>
+            <span v-else>{{ param.name }}</span>
+          </template>
 
         <o-checkbox v-if="param.type === Boolean"
                     v-model="testParams[param.name]"
