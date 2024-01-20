@@ -190,30 +190,37 @@ export default {
                         required: true,
                     },
                     {
+                        // Optional (exact match)
                         name: 'name',
                         type: String,
                     },
                     {
+                        // Optional (exact match)
                         name: 'identifier',
                         type: String,
                     },
                     {
+                        // Optional
                         name: 'default',
                         type: Boolean,
                     },
                     {
+                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeStatus',
                         type: Boolean,
                     },
                     {
+                        // Optional - will take time to respond, so only request if necessary
                         name: 'includeMetadata',
                         type: Boolean,
                     },
                     {
+                        // Optional - include followed names only
                         name: 'followedOnly',
                         type: Boolean,
                     },
                     {
+                        // Optional - exclude blocked content
                         name: 'excludeBlocked',
                         type: Boolean,
                     },
@@ -240,6 +247,84 @@ export default {
                         name: 'name',
                         type: String,
                         required: true,
+                    },
+                ],
+            },
+
+            SEARCH_QDN_RESOURCES: {
+                description: "Search arbitrary resources available on chain, optionally filtered by service. If default is set to true, only resources without identifiers will be returned.",
+                params: [
+
+                    {
+                        name: 'service',
+                        type: String,
+                    },
+                    {
+                        // Optional - searches both "identifier" and "name" fields
+                        name: 'query',
+                        type: String,
+                    },
+                    {
+                        // Optional - searches only the "identifier" field
+                        name: 'identifier',
+                        type: String,
+                    },
+                    {
+                        // Optional - searches only the "name" field
+                        name: 'name',
+                        type: String,
+                    },
+                    {
+                        // Optional - if true, only the beginning of fields are matched in all of the above filters
+                        name: 'prefix',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - if true, partial name matches are excluded
+                        name: 'exactMatchNames',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - if true, only resources without identifiers are returned
+                        name: 'default',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - will take time to respond, so only request if necessary
+                        name: 'includeStatus',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - will take time to respond, so only request if necessary
+                        name: 'includeMetadata',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - will only return results if they are from a name included in supplied list
+                        name: 'nameListFilter',
+                        type: String,
+                    },
+                    {
+                        // Optional - include followed names only
+                        name: 'followedOnly',
+                        type: Boolean,
+                    },
+                    {
+                        // Optional - exclude blocked content
+                        name: 'excludeBlocked',
+                        type: Boolean,
+                    },
+                    {
+                        name: 'limit',
+                        type: Number,
+                    },
+                    {
+                        name: 'offset',
+                        type: Number,
+                    },
+                    {
+                        name: 'reverse',
+                        type: Boolean,
                     },
                 ],
             },
