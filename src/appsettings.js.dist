@@ -4,6 +4,8 @@ import packageData from '../package.json'
 var appsettings = {
     appTitle: packageData.name,
     appVersion: packageData.version,
+    appDependencies: packageData.dependencies,
+    appRepository: 'your code repo URL here',
     maintainerName: 'Your Name Here',
 };
 
