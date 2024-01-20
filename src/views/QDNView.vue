@@ -86,6 +86,7 @@ export default {
             downloadSupportedServices: [
                 'DOCUMENT',
                 'THUMBNAIL',
+                'VIDEO',
             ],
         }
     },
@@ -137,6 +138,9 @@ export default {
             } else if (resource.service == 'THUMBNAIL') {
                 return await this.downloadThumbnail(resource)
 
+            } else if (resource.service == 'VIDEO') {
+                return await this.downloadVideo(resource)
+
             } else {
                 alert(`TODO: download not yet implemented for service: ${resource.service}`)
             }
@@ -144,11 +148,11 @@ export default {
 
         async fetchResource(resource) {
 
-            // TODO: why does FETCH_QDN_RESOURCE not work for THUMBNAIL?
+            // TODO: why does FETCH_QDN_RESOURCE not work for binary?
             // i must be doing something wrong, always get bad data for
             // that, but at least this way does work okay...
-            if (resource.service == 'THUMBNAIL') {
-                const url = `/arbitrary/THUMBNAIL/${resource.name}/${resource.identifier || 'default'}`
+            if (['THUMBNAIL', 'VIDEO'].includes(resource.service)) {
+                const url = `/arbitrary/${resource.service}/${resource.name}/${resource.identifier || 'default'}`
                 const response = await fetch(url)
                 return await response.blob()
             }
@@ -206,6 +210,19 @@ export default {
             return response?.mimeType
         },
 
+        isDownloadable(resource) {
+            if (this.downloadSupportedServices.includes(resource.service)) {
+
+                if (resource.service == 'VIDEO' && resource?.status?.status != 'READY') {
+                    return false
+                }
+
+                return true
+            }
+
+            return false
+        },
+
         async downloadThumbnail(resource) {
             this.downloading = true
             let response
@@ -220,9 +237,50 @@ export default {
 
             const mimeType = await this.sniffMimeType(resource)
             const extension = {
+                'image/gif': 'gif',
                 'image/jpeg': 'jpg',
                 'image/png': 'png',
                 'image/webp': 'webp',
+            }[mimeType] || 'dat'
+
+            try {
+                response = await qortalRequest({
+                    action: 'SAVE_FILE',
+                    blob: response,
+                    filename: `${resource.identifier || resource.name}.${extension}`,
+                    mimeType: mimeType,
+                })
+                if (!response) {
+                    alert("save returned false!?")
+                    this.downloading = false
+                    return
+                }
+
+            } catch (error) {
+                alert("save error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            alert("File has been saved.")
+            this.downloading = false
+        },
+
+        async downloadVideo(resource) {
+            this.downloading = true
+            let response
+
+            try {
+                response = await this.fetchResource(resource)
+            } catch (error) {
+                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            const mimeType = await this.sniffMimeType(resource)
+            const extension = {
+                'video/mp4': 'mp4',
             }[mimeType] || 'dat'
 
             try {
@@ -347,7 +405,9 @@ export default {
               </o-table-column>
               <o-table-column label="Size"
                               v-slot="{ row }">
-                {{ formatBytes(row.size) }}
+                <span :title="`${row.size} bytes`">
+                  {{ formatBytes(row.size) }}
+                </span>
               </o-table-column>
               <o-table-column label="Status"
                               :visible="showStatusColumn"
@@ -356,7 +416,7 @@ export default {
               </o-table-column>
               <o-table-column label="Actions"
                               v-slot="{ row }">
-                <a v-if="downloadSupportedServices.includes(row.service)"
+                <a v-if="isDownloadable(row)"
                    href="#" @click.prevent="downloadResource(row)">
                   <o-icon icon="download" />
                   <span>Download</span>
