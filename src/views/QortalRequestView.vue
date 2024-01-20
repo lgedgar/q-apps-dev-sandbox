@@ -347,6 +347,28 @@ export default {
                 ],
             },
 
+            SAVE_FILE: {
+                description: "Save a data blob to file on local disk.  User will be prompted for final destination path.",
+                requiresUserApproval: true,
+                params: [
+                    {
+                        name: 'blob',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'filename',
+                        type: String,
+                        required: true,
+                    },
+                    {
+                        name: 'mimeType',
+                        type: String,
+                        description: "Optional but recommended",
+                    },
+                ],
+            },
+
             SEARCH_QDN_RESOURCES: {
                 description: "Search arbitrary resources available on chain, optionally filtered by service. If default is set to true, only resources without identifiers will be returned.",
                 params: [

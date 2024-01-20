@@ -77,9 +77,15 @@ export default {
             service: null,
             name: null,
             identifier: null,
+            includeStatus: false,
             limit: 20,
+            showStatusColumn: false,
             data: null,
             searching: false,
+            downloading: false,
+            downloadSupportedServices: [
+                'DOCUMENT',
+            ],
         }
     },
 
@@ -97,6 +103,7 @@ export default {
 
             let params = {
                 action: 'LIST_QDN_RESOURCES',
+                includeStatus: this.includeStatus,
                 limit: this.limit,
             }
             if (this.service) {
@@ -110,7 +117,69 @@ export default {
             }
 
             this.data = await qortalRequest(params)
+            this.showStatusColumn = this.includeStatus
             this.searching = false
+        },
+
+        async openProfile(name) {
+            await qortalRequest({
+                action: 'OPEN_PROFILE',
+                name: name,
+            })
+        },
+
+        async downloadResource(resource) {
+
+            if (resource.service == 'DOCUMENT') {
+                return await this.downloadDocument(resource)
+
+            } else {
+                alert(`TODO: download not yet implemented for service: ${resource.service}`)
+            }
+        },
+
+        async fetchResource(resource) {
+            return await qortalRequest({
+                action: 'FETCH_QDN_RESOURCE',
+                service: resource.service,
+                name: resource.name,
+                identifier: resource.identifier,
+            })
+        },
+
+        async downloadDocument(resource) {
+            this.downloading = true
+            let response
+
+            try {
+                response = await this.fetchResource(resource)
+            } catch (error) {
+                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            try {
+                response = await qortalRequest({
+                    action: 'SAVE_FILE',
+                    blob: JSON.stringify(response, null, 2),
+                    filename: `${resource.identifier || resource.name}.json`,
+                    mimeType: 'application/json',
+                })
+                if (!response) {
+                    alert("save returned false!?")
+                    this.downloading = false
+                    return
+                }
+
+            } catch (error) {
+                alert("save error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            alert("File has been saved.")
+            this.downloading = false
         },
     },
 }
@@ -121,7 +190,7 @@ export default {
 
     <h2 class="is-size-2">QDN</h2>
     <p class="block">
-      Find out what's in the Qortal Data Network.
+      Interact with the Qortal Data Network.
     </p>
 
     <o-tabs v-model="activeTab">
@@ -153,6 +222,12 @@ export default {
           </o-field>
 
           <o-field grouped>
+            <o-field label="Include Status">
+              <o-checkbox v-model="includeStatus" />
+            </o-field>
+          </o-field>
+
+          <o-field grouped>
             <o-field label="Limit">
               <o-input v-model="limit" type="number" />
             </o-field>
@@ -174,6 +249,7 @@ export default {
             </p>
 
             <o-table :data="data || []"
+                     hoverable
                      :loading="searching">
               <o-table-column label="Service"
                               v-slot="{ row }">
@@ -181,15 +257,13 @@ export default {
               </o-table-column>
               <o-table-column label="Name"
                               v-slot="{ row }">
+                <a href="#" @click.prevent="openProfile(row.name)">
                 {{ row.name }}
+                </a>
               </o-table-column>
               <o-table-column label="Identifier"
                               v-slot="{ row }">
                 {{ row.identifier }}
-              </o-table-column>
-              <o-table-column label="Size"
-                              v-slot="{ row }">
-                {{ formatBytes(row.size) }}
               </o-table-column>
               <o-table-column label="Created"
                               v-slot="{ row }">
@@ -204,6 +278,23 @@ export default {
                       :title="new Date(row.updated)">
                   {{ moment(row.updated).fromNow() }}
                 </span>
+              </o-table-column>
+              <o-table-column label="Size"
+                              v-slot="{ row }">
+                {{ formatBytes(row.size) }}
+              </o-table-column>
+              <o-table-column label="Status"
+                              :visible="showStatusColumn"
+                              v-slot="{ row }">
+                {{ row?.status?.status }}
+              </o-table-column>
+              <o-table-column label="Actions"
+                              v-slot="{ row }">
+                <a v-if="downloadSupportedServices.includes(row.service)"
+                   href="#" @click.prevent="downloadResource(row)">
+                  <o-icon icon="download" />
+                  <span>Download</span>
+                </a>
               </o-table-column>
             </o-table>
 
