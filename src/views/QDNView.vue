@@ -1,4 +1,5 @@
 <script setup>
+import moment from 'moment'
 
 // nb. this was copied from https://stackoverflow.com/a/18650828
 function formatBytes(bytes, decimals = 2) {
@@ -192,11 +193,17 @@ export default {
               </o-table-column>
               <o-table-column label="Created"
                               v-slot="{ row }">
-                {{ new Date(row.created) }}
+                <span v-if="row.created"
+                      :title="new Date(row.created)">
+                  {{ moment(row.created).fromNow() }}
+                </span>
               </o-table-column>
               <o-table-column label="Updated"
                               v-slot="{ row }">
-                {{ row.updated ? new Date(row.updated) : '' }}
+                <span v-if="row.updated"
+                      :title="new Date(row.updated)">
+                  {{ moment(row.updated).fromNow() }}
+                </span>
               </o-table-column>
             </o-table>
 
