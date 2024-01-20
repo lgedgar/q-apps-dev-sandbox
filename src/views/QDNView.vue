@@ -131,20 +131,52 @@ export default {
             })
         },
 
+        isDownloadable(resource) {
+            if (this.downloadSupportedServices.includes(resource.service)) {
+                // TODO: until we can show download progress, avoid video
+                // resources which aren't already downloaded to node
+                if (resource.service == 'VIDEO' && resource?.status?.status != 'READY') {
+                    return false
+                }
+                return true
+            }
+            return false
+        },
+
         async downloadResource(resource) {
+            this.downloading = true
+            let blob
+
+            try {
+                blob = await this.fetchResource(resource)
+            } catch (error) {
+                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
+                this.downloading = false
+                return
+            }
+
+            let mimeType
+            let extension
 
             if (['DOCUMENT', 'PLAYLIST'].includes(resource.service)) {
-                return await this.downloadDocument(resource)
-
-            } else if (resource.service == 'THUMBNAIL') {
-                return await this.downloadThumbnail(resource)
-
-            } else if (resource.service == 'VIDEO') {
-                return await this.downloadVideo(resource)
+                // nb. handle JSON special-like
+                blob = JSON.stringify(JSON.parse(await blob.text()), null, 2)
+                mimeType = 'application/json'
+                extension = 'json'
 
             } else {
-                alert(`TODO: download not yet implemented for service: ${resource.service}`)
+                mimeType = await this.sniffMimeType(resource)
+                extension = {
+                    'image/gif': 'gif',
+                    'image/jpeg': 'jpg',
+                    'image/png': 'png',
+                    'image/webp': 'webp',
+                    'video/mp4': 'mp4',
+                }[mimeType] || 'dat'
             }
+
+            await this.saveFile(resource, blob, {mimeType, extension})
+            this.downloading = false
         },
 
         async fetchResource(resource) {
@@ -157,29 +189,21 @@ export default {
             return await response.blob()
         },
 
-        async downloadDocument(resource) {
-            this.downloading = true
-            let blob
-
-            try {
-                blob = await this.fetchResource(resource)
-            } catch (error) {
-                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
-                return
-            }
+        async saveFile(resource, blob, options) {
+            const mimeType = options?.mimeType
+            const extension = options?.extension || 'dat'
+            const filename = options?.filename || `${resource.identifier || resource.name}.${extension}`
 
             try {
                 const response = await qortalRequest({
                     action: 'SAVE_FILE',
-                    blob: JSON.stringify(JSON.parse(await blob.text()), null, 2),
-                    filename: `${resource.identifier || resource.name}.json`,
-                    mimeType: 'application/json',
+                    blob,
+                    filename,
+                    mimeType,
                 })
                 if (response !== true) {
                     alert("hm, did save fail!?")
-                    this.downloading = false
-                    return
+                    return false
                 }
 
             } catch (error) {
@@ -189,118 +213,12 @@ export default {
                 if (error.error != "User declined request") {
                     alert("save error:\n\n" + JSON.stringify(error, null, 2))
                 }
-                this.downloading = false
-                return
+                return false
             }
 
+            // TODO: probably no need for this alert?
             alert("File has been saved.")
-            this.downloading = false
-        },
-
-        async sniffMimeType(resource) {
-            const response = await qortalRequest({
-                action: 'GET_QDN_RESOURCE_PROPERTIES',
-                service: resource.service,
-                name: resource.name,
-                identifier: resource.identifier,
-            })
-            return response?.mimeType
-        },
-
-        isDownloadable(resource) {
-            if (this.downloadSupportedServices.includes(resource.service)) {
-
-                if (resource.service == 'VIDEO' && resource?.status?.status != 'READY') {
-                    return false
-                }
-
-                return true
-            }
-
-            return false
-        },
-
-        async downloadThumbnail(resource) {
-            this.downloading = true
-            let response
-
-            try {
-                response = await this.fetchResource(resource)
-            } catch (error) {
-                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
-                return
-            }
-
-            const mimeType = await this.sniffMimeType(resource)
-            const extension = {
-                'image/gif': 'gif',
-                'image/jpeg': 'jpg',
-                'image/png': 'png',
-                'image/webp': 'webp',
-            }[mimeType] || 'dat'
-
-            try {
-                response = await qortalRequest({
-                    action: 'SAVE_FILE',
-                    blob: response,
-                    filename: `${resource.identifier || resource.name}.${extension}`,
-                    mimeType: mimeType,
-                })
-                if (!response) {
-                    alert("save returned false!?")
-                    this.downloading = false
-                    return
-                }
-
-            } catch (error) {
-                alert("save error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
-                return
-            }
-
-            alert("File has been saved.")
-            this.downloading = false
-        },
-
-        async downloadVideo(resource) {
-            this.downloading = true
-            let response
-
-            try {
-                response = await this.fetchResource(resource)
-            } catch (error) {
-                alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
-                return
-            }
-
-            const mimeType = await this.sniffMimeType(resource)
-            const extension = {
-                'video/mp4': 'mp4',
-            }[mimeType] || 'dat'
-
-            try {
-                response = await qortalRequest({
-                    action: 'SAVE_FILE',
-                    blob: response,
-                    filename: `${resource.identifier || resource.name}.${extension}`,
-                    mimeType: mimeType,
-                })
-                if (!response) {
-                    alert("save returned false!?")
-                    this.downloading = false
-                    return
-                }
-
-            } catch (error) {
-                alert("save error:\n\n" + JSON.stringify(error, null, 2))
-                this.downloading = false
-                return
-            }
-
-            alert("File has been saved.")
-            this.downloading = false
+            return true
         },
     },
 }
