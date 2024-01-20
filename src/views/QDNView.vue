@@ -160,6 +160,7 @@ export default {
           <div style="padding-bottom: 0.75rem;">
             <o-button variant="primary"
                       native-type="submit"
+                      icon-left="magnifying-glass"
                       :disabled="searching">
               {{ searching ? "Working, please wait..." : "Search" }}
             </o-button>

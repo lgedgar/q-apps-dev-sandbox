@@ -212,7 +212,8 @@ export default {
   <div>
 
     <o-button @click="initFeedback()"
-              variant="primary">
+              variant="primary"
+              icon-left="comment">
       Feedback
     </o-button>
 

@@ -37,9 +37,9 @@ export default {
 
       <o-button @click="openDocs()"
                 variant="primary"
+                icon-left="external-link-alt"
                 >
-        <!-- icon-left="arrow-right" -->
-        Q-Docs (open new tab)
+        Q-Docs App
       </o-button>
 
       <Feedback />
