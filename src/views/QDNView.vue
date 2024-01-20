@@ -85,6 +85,7 @@ export default {
             downloading: false,
             downloadSupportedServices: [
                 'DOCUMENT',
+                'PLAYLIST',
                 'THUMBNAIL',
                 'VIDEO',
             ],
@@ -132,7 +133,7 @@ export default {
 
         async downloadResource(resource) {
 
-            if (resource.service == 'DOCUMENT') {
+            if (['DOCUMENT', 'PLAYLIST'].includes(resource.service)) {
                 return await this.downloadDocument(resource)
 
             } else if (resource.service == 'THUMBNAIL') {
@@ -147,30 +148,21 @@ export default {
         },
 
         async fetchResource(resource) {
-
-            // TODO: why does FETCH_QDN_RESOURCE not work for binary?
-            // i must be doing something wrong, always get bad data for
-            // that, but at least this way does work okay...
-            if (['THUMBNAIL', 'VIDEO'].includes(resource.service)) {
-                const url = `/arbitrary/${resource.service}/${resource.name}/${resource.identifier || 'default'}`
-                const response = await fetch(url)
-                return await response.blob()
-            }
-
-            return await qortalRequest({
-                action: 'FETCH_QDN_RESOURCE',
-                service: resource.service,
-                name: resource.name,
-                identifier: resource.identifier,
-            })
+            // TODO: for some reason FETCH_QDN_RESOURCE does not work
+            // as i expect it to, and/or i was somehow using it wrong.
+            // at any rate it kept giving me bad data, so now am just
+            // using the core API directly to fetch
+            const url = `/arbitrary/${resource.service}/${resource.name}/${resource.identifier || 'default'}`
+            const response = await fetch(url)
+            return await response.blob()
         },
 
         async downloadDocument(resource) {
             this.downloading = true
-            let response
+            let blob
 
             try {
-                response = await this.fetchResource(resource)
+                blob = await this.fetchResource(resource)
             } catch (error) {
                 alert("fetch error:\n\n" + JSON.stringify(error, null, 2))
                 this.downloading = false
@@ -178,20 +170,25 @@ export default {
             }
 
             try {
-                response = await qortalRequest({
+                const response = await qortalRequest({
                     action: 'SAVE_FILE',
-                    blob: JSON.stringify(response, null, 2),
+                    blob: JSON.stringify(JSON.parse(await blob.text()), null, 2),
                     filename: `${resource.identifier || resource.name}.json`,
                     mimeType: 'application/json',
                 })
-                if (!response) {
-                    alert("save returned false!?")
+                if (response !== true) {
+                    alert("hm, did save fail!?")
                     this.downloading = false
                     return
                 }
 
             } catch (error) {
-                alert("save error:\n\n" + JSON.stringify(error, null, 2))
+                // TODO: this seems awfully fragile but not sure how else to
+                // check for the "user rejected" scenario, which can safely
+                // be ignored.  (other errors should be shown)
+                if (error.error != "User declined request") {
+                    alert("save error:\n\n" + JSON.stringify(error, null, 2))
+                }
                 this.downloading = false
                 return
             }
