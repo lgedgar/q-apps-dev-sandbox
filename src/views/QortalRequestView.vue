@@ -264,15 +264,15 @@ export default {
                 requiresUserApproval: true,
                 params: [
                     {
+                        name: 'service',
+                        type: String,
+                        required: true,
+                    },
+                    {
                         name: 'name',
                         type: String,
                         required: true,
                         description: "Publisher must own the registered name - use GET_ACCOUNT_NAMES for a list",
-                    },
-                    {
-                        name: 'service',
-                        type: String,
-                        required: true,
                     },
                     {
                         name: 'identifier',
