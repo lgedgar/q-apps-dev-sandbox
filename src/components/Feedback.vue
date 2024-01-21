@@ -1,4 +1,6 @@
 <script setup>
+import { mapStores } from 'pinia'
+import {useQordialAuthStore, ServicePicker} from 'qordial'
 import ShortUniqueId from "short-unique-id"
 import appsettings from '../appsettings'
 </script>
@@ -10,8 +12,6 @@ export default {
         return {
             appTitle: appsettings.appTitle,
             showDialog: false,
-            useraddr: null,
-            username: null,
             userpubkey: null,
             referrer: null,
             message: null,
@@ -22,14 +22,15 @@ export default {
     },
 
     computed: {
+        ...mapStores(useQordialAuthStore),
 
         yourNameFieldInfo() {
-            if (!this.useraddr) {
+            if (!this.qordialAuthStore.address) {
                 return {
                     variant: 'danger',
                     message: "You must authenticate to send Q-Mail.",
                 }
-            } else if (!this.username) {
+            } else if (!this.qordialAuthStore.username) {
                 return {
                     variant: 'danger',
                     message: "You must have a registered name to send Q-Mail.",
@@ -43,12 +44,12 @@ export default {
         async initFeedback() {
             let response
 
-            if (!this.useraddr) {
+            if (!this.qordialAuthStore.address) {
                 try {
                     response = await qortalRequest({
                         action: 'GET_USER_ACCOUNT',
                     })
-                    this.useraddr = response.address
+                    this.qordialAuthStore.setAddress(response.address)
                 } catch (error) {
                     // nb. presumably user rejected the auth request;
                     // we can safely ignore this error, the form will
@@ -56,21 +57,21 @@ export default {
                 }
             }
 
-            if (this.useraddr && !this.username) {
+            if (this.qordialAuthStore.address && !this.qordialAuthStore.username) {
                 response = await qortalRequest({
                     action: 'GET_ACCOUNT_NAMES',
-                    address: this.useraddr,
+                    address: this.qordialAuthStore.address,
                     limit: 1,
                 })
                 if (response.length) {
-                    this.username = response[0].name
+                    this.qordialAuthStore.setUsername(response[0].name)
                 }
             }
 
-            if (this.useraddr && !this.userpubkey) {
+            if (this.qordialAuthStore.address && !this.userpubkey) {
                 response = await qortalRequest({
                     action: 'GET_ACCOUNT_DATA',
-                    address: this.useraddr,
+                    address: this.qordialAuthStore.address,
                 })
                 this.userpubkey = response.publicKey
             }
@@ -166,7 +167,7 @@ export default {
             try {
                 response = await qortalRequest({
                     action: 'PUBLISH_QDN_RESOURCE',
-                    name: this.username,
+                    name: this.qordialAuthStore.username,
                     service: 'MAIL_PRIVATE',
                     data64: await this.objectToBase64(mailObject),
                     identifier,
@@ -238,7 +239,7 @@ export default {
           <o-field label="Your Name" horizontal
                    :variant="yourNameFieldInfo?.variant"
                    :message="yourNameFieldInfo?.message">
-            <o-input :value="username || useraddr" disabled />
+            <o-input :value="qordialAuthStore.username || qordialAuthStore.address" disabled />
           </o-field>
 
           <o-field label="Current Route" horizontal>
@@ -256,7 +257,7 @@ export default {
 
             <o-button variant="primary"
                       @click="sendFeedback()"
-                      :disabled="sending || !username || !message?.trim()">
+                      :disabled="sending || !qordialAuthStore.username || !message?.trim()">
               {{ sending ? "Working, please wait..." : "Send Message" }}
             </o-button>
 

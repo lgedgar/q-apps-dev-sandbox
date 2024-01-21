@@ -1,5 +1,6 @@
 <script setup>
-import {ServicePicker} from 'qordial'
+import { mapStores } from 'pinia'
+import {useQordialAuthStore, ServicePicker} from 'qordial'
 </script>
 
 <script>
@@ -12,11 +13,13 @@ export default {
         },
     },
 
+    computed: {
+        ...mapStores(useQordialAuthStore),
+    },
+
     data() {
         return {
-            address: null,
             service: 'DOCUMENT',
-            name: null,
             identifier: null,
             payloadType: 'text',
             payloadText: null,
@@ -35,15 +38,15 @@ export default {
                 response = await qortalRequest({
                     action: 'GET_USER_ACCOUNT',
                 })
-                this.address = response.address
+                this.qordialAuthStore.setAddress(response.address)
 
                 response = await qortalRequest({
                     action: 'GET_ACCOUNT_NAMES',
-                    address: this.address,
+                    address: this.qordialAuthStore.address,
                     limit: 1,
                 })
                 if (response.length) {
-                    this.name = response[0].name
+                    this.qordialAuthStore.setUsername(response[0].name)
                 }
 
             } catch (error) {
@@ -62,7 +65,7 @@ export default {
             try {
                 response = await qortalRequest({
                     action: 'PUBLISH_QDN_RESOURCE',
-                    name: this.name,
+                    name: this.qordialAuthStore.username,
                     service: this.service,
                     identifier: this.identifier,
                     data64: this.payloadText,
@@ -102,13 +105,13 @@ export default {
 
     <o-field grouped>
       <o-field label="Name">
-        <o-button v-if="!address"
+        <o-button v-if="!qordialAuthStore.address"
                   variant="primary"
                   @click="authenticate()">
           please authenticate
         </o-button>
-        <o-input v-if="address"
-                 v-model="name" disabled />
+        <o-input v-if="qordialAuthStore.address"
+                 v-model="qordialAuthStore.username" disabled />
       </o-field>
       <o-field label="Service">
         <ServicePicker v-model="service" required
@@ -169,7 +172,7 @@ export default {
 
     <o-button variant="primary"
               icon-left="save"
-              :disabled="publishing || !name"
+              :disabled="publishing || !qordialAuthStore.username"
               @click="publish()">
       {{ publishing ? "Working, please wait..." : "Publish" }}
     </o-button>
