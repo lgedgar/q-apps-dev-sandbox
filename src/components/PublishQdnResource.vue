@@ -1,5 +1,5 @@
 <script setup>
-import ServicePicker from './ServicePicker.vue'
+import {ServicePicker} from 'qordial'
 </script>
 
 <script>
@@ -112,7 +112,7 @@ export default {
       </o-field>
       <o-field label="Service">
         <ServicePicker v-model="service" required
-                       :services="['DOCUMENT']" />
+                       :include-services="['DOCUMENT', 'JSON']" />
       </o-field>
       <o-field label="Identifier">
         <o-input v-model="identifier"
