@@ -1,5 +1,6 @@
 <script setup>
 import moment from 'moment'
+import PublishQdnResource from '../components/PublishQdnResource.vue'
 
 // nb. this was copied from https://stackoverflow.com/a/18650828
 function formatBytes(bytes, decimals = 2) {
@@ -413,6 +414,10 @@ export default {
       <!-- <o-tab-item :value="1" label="SEARCH_QDN_RESOURCES"> -->
       <!--   <p class="block">TODO</p> -->
       <!-- </o-tab-item> -->
+
+      <o-tab-item :value="1" label="PUBLISH_QDN_RESOURCE">
+        <PublishQdnResource :services="services" />
+      </o-tab-item>
 
     </o-tabs>
   </div>
