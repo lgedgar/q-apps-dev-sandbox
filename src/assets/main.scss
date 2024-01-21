@@ -1,0 +1,39 @@
+@import './custom.scss';
+
+// nb. much of this was inspired by
+// https://blog.openreplay.com/implementing-dark-mode-with-bulma/
+
+body {
+    min-height: 100vh;
+    transition: all 0.4s ease;
+}
+
+body.dark {
+    background-color: $dark;
+    color: $light;
+}
+
+body.dark .label {
+    color: $light;
+}
+
+body.dark a:hover {
+    color: $light-invert;
+}
+
+body.dark .card {
+    background-color: $dark;
+    color: $light;
+}
+
+body.dark .card .card-header-title {
+    color: $light;
+}
+
+body.dark .card .label {
+    color: $light;
+}
+
+body.dark .card a:hover {
+    color: $light-invert;
+}

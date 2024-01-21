@@ -6,15 +6,32 @@ import Feedback from './components/Feedback.vue'
 <script>
 export default {
 
+    data() {
+        return {
+            darkMode: false,
+        }
+    },
+
     mounted() {
         // nb. for some reason the current route does not load automatically
         // in the context of a published q-app, so we do that explicitly
         if (window._qdnPath !== undefined) {
             this.$router.push(window._qdnPath)
         }
+
+        // set dark mode if applicable
+        if (window._qdnTheme == 'dark') {
+            this.setDarkMode(true)
+        }
     },
 
     methods: {
+
+        setDarkMode(dark) {
+            this.darkMode = dark
+            const body = document.querySelector('body')
+            body.className = dark ? 'dark' : ''
+        },
 
         openDocs() {
             qortalRequest({
@@ -34,6 +51,15 @@ export default {
           style="flex-grow: 1;">
         Q-Apps Dev Sandbox
       </h1>
+
+      <a v-if="!darkMode"
+         href="#" @click.prevent="setDarkMode(true)">
+        <o-icon icon="moon" size="large" />
+      </a>
+      <a v-if="darkMode"
+         href="#" @click.prevent="setDarkMode(false)">
+        <o-icon icon="sun" size="large" />
+      </a>
 
       <o-button @click="openDocs()"
                 variant="primary"
