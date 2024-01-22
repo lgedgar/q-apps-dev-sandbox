@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - nothing yet
 
+## 0.1.2 - 2024-01-22
+
+### Changed
+
+- Add base64 encoding, check for existing resource when publishing.
+
 ## 0.1.1 - 2024-01-21
 
 ### Changed
