@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - nothing yet
 
+## 0.1.1 - 2024-01-21
+
+### Changed
+
+- Use auth store from qordial, for user address/name.
+- Use qordial plugin to authenticate; add first app settings.
+
 ## 0.1.0 - 2024-01-21
 
 ### Added
