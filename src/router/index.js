@@ -27,6 +27,11 @@ const router = createRouter({
       component: QDNView,
     },
     {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('../views/SettingsView.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       // route level code-splitting

@@ -1,5 +1,8 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import { mapStores } from 'pinia'
+import {useQordialAuthStore} from 'qordial'
+import {useAppSettingsStore} from './stores/settings'
 import Feedback from './components/Feedback.vue'
 </script>
 
@@ -10,6 +13,10 @@ export default {
         return {
             darkMode: false,
         }
+    },
+
+    computed: {
+        ...mapStores(useQordialAuthStore, useAppSettingsStore),
     },
 
     mounted() {
@@ -23,6 +30,10 @@ export default {
         if (window._qdnTheme == 'dark') {
             this.setDarkMode(true)
         }
+
+        if (this.appSettingsStore.alwaysAuthenticate) {
+            this.$qordial.authenticate()
+        }
     },
 
     methods: {
@@ -33,11 +44,29 @@ export default {
             body.className = dark ? 'dark' : ''
         },
 
-        openDocs() {
-            qortalRequest({
+        async openDocs() {
+            await qortalRequest({
                 action: "OPEN_NEW_TAB",
                 qortalLink: "qortal://APP/Q-Docs",
             })
+        },
+
+        async openSandbox() {
+            await qortalRequest({
+                action: 'OPEN_NEW_TAB',
+                qortalLink: 'qortal://APP/Q-Sandbox',
+            })
+        },
+
+        async onAuthButtonClick() {
+            if (!this.qordialAuthStore.address) {
+                await this.$qordial.authenticate()
+            } else {
+                await qortalRequest({
+                    action: 'OPEN_PROFILE',
+                    name: this.qordialAuthStore.username,
+                })
+            }
         },
     },
 }
@@ -63,12 +92,23 @@ export default {
 
       <o-button @click="openDocs()"
                 variant="primary"
-                icon-left="external-link-alt"
-                >
-        Q-Docs App
+                icon-left="external-link-alt">
+        Q-Docs
+      </o-button>
+
+      <o-button @click="openSandbox()"
+                variant="primary"
+                icon-left="external-link-alt">
+        Q-Sandbox
       </o-button>
 
       <Feedback />
+
+      <o-button :variant="qordialAuthStore.username ? 'primary' : null"
+                icon-left="user"
+                @click="onAuthButtonClick">
+        {{ qordialAuthStore.username || "please authenticate" }}
+      </o-button>
 
     </div>
 
@@ -76,6 +116,7 @@ export default {
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/qortalRequest/"><span class="is-family-code">qortalRequest()</span></RouterLink>
       <RouterLink to="/QDN/">QDN</RouterLink>
+      <RouterLink to="/settings">Settings</RouterLink>
       <RouterLink to="/about">About</RouterLink>
     </nav>
   </header>

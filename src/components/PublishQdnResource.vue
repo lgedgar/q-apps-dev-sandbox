@@ -32,30 +32,6 @@ export default {
 
     methods: {
 
-        async authenticate() {
-            let response
-            try {
-                response = await qortalRequest({
-                    action: 'GET_USER_ACCOUNT',
-                })
-                this.qordialAuthStore.setAddress(response.address)
-
-                response = await qortalRequest({
-                    action: 'GET_ACCOUNT_NAMES',
-                    address: this.qordialAuthStore.address,
-                    limit: 1,
-                })
-                if (response.length) {
-                    this.qordialAuthStore.setUsername(response[0].name)
-                }
-
-            } catch (error) {
-                // nb. presumably user rejected the auth request;
-                // we can safely ignore this error, the form will
-                // show warnings etc. if username is not known
-            }
-        },
-
         async publish() {
             this.publishing = true
 
@@ -107,7 +83,7 @@ export default {
       <o-field label="Name">
         <o-button v-if="!qordialAuthStore.address"
                   variant="primary"
-                  @click="authenticate()">
+                  @click="$qordial.authenticate()">
           please authenticate
         </o-button>
         <o-input v-if="qordialAuthStore.address"

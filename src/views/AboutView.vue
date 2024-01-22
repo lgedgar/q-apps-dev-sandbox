@@ -38,6 +38,16 @@ export default {
       <span>{{ appVersion }}</span>
     </o-field>
 
+    <o-field label="Maintainer" horizontal>
+      <a href="#" @click.prevent="showMaintainer()">
+        {{ appMaintainer }}
+      </a>
+    </o-field>
+
+    <o-field label="Code Repo" horizontal>
+      <span>{{ appRepository }}</span>
+    </o-field>
+
     <o-field label="Dependencies" horizontal>
       <ul>
         <li v-for="(ver, pkg, i) in appDependencies"
@@ -45,16 +55,6 @@ export default {
           {{ pkg }} {{ ver }}
         </li>
       </ul>
-    </o-field>
-
-    <o-field label="Maintainer" horizontal>
-      <a href="#" @click.prevent="showMaintainer()">
-        {{ appMaintainer }}
-      </a>
-    </o-field>
-
-    <o-field label="Code Repository" horizontal>
-      <span>{{ appRepository }}</span>
     </o-field>
 
   </div>

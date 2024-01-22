@@ -45,27 +45,7 @@ export default {
             let response
 
             if (!this.qordialAuthStore.address) {
-                try {
-                    response = await qortalRequest({
-                        action: 'GET_USER_ACCOUNT',
-                    })
-                    this.qordialAuthStore.setAddress(response.address)
-                } catch (error) {
-                    // nb. presumably user rejected the auth request;
-                    // we can safely ignore this error, the form will
-                    // show warnings etc. if username is not known
-                }
-            }
-
-            if (this.qordialAuthStore.address && !this.qordialAuthStore.username) {
-                response = await qortalRequest({
-                    action: 'GET_ACCOUNT_NAMES',
-                    address: this.qordialAuthStore.address,
-                    limit: 1,
-                })
-                if (response.length) {
-                    this.qordialAuthStore.setUsername(response[0].name)
-                }
+                await this.$qordial.authenticate()
             }
 
             if (this.qordialAuthStore.address && !this.userpubkey) {

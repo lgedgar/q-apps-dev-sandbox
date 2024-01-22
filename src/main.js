@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome"
 
 import App from './App.vue'
 import router from './router'
+import {QordialPlugin} from 'qordial'
 
 library.add(fas)
 
@@ -29,6 +30,7 @@ app.use(Oruga, {
     iconPack: 'fas',
 })
 app.use(router)
+app.use(QordialPlugin)
 app.use(VCodeBlock)
 
 app.mount('#app')
