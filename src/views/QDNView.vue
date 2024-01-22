@@ -133,6 +133,10 @@ export default {
             })
         },
 
+        copyIdentifier(resource) {
+            navigator.clipboard.writeText(resource.identifier)
+        },
+
         isDownloadable(resource) {
             if (this.downloadSupportedServices.includes(resource.service)) {
                 return true
@@ -151,24 +155,23 @@ export default {
             }
 
             let mimeType
-            let extension
-
             if (['DOCUMENT', 'PLAYLIST'].includes(resource.service)) {
-                // nb. handle JSON special-like
-                blob = JSON.stringify(JSON.parse(await blob.text()), null, 2)
+                // TODO: i was previously "pretty-formatting" the JSON here, but
+                // no longer think that is a good idea.  maybe should remove this
+                // altogether and force mime type sniffing?
                 mimeType = 'application/json'
-                extension = 'json'
 
             } else {
                 mimeType = await this.sniffMimeType(resource)
-                extension = {
-                    'image/gif': 'gif',
-                    'image/jpeg': 'jpg',
-                    'image/png': 'png',
-                    'image/webp': 'webp',
-                    'video/mp4': 'mp4',
-                }[mimeType] || 'dat'
             }
+            const extension = {
+                'application/json': 'json',
+                'image/gif': 'gif',
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+                'video/mp4': 'mp4',
+            }[mimeType] || 'dat'
 
             await this.saveFile(resource, blob, {mimeType, extension})
         },
@@ -370,6 +373,9 @@ export default {
               <o-table-column label="Identifier"
                               v-slot="{ row }">
                 {{ row.identifier }}
+                <a href="#" @click.prevent="copyIdentifier(row)">
+                  <o-icon icon="copy" />
+                </a>
               </o-table-column>
               <o-table-column label="Created"
                               v-slot="{ row }">

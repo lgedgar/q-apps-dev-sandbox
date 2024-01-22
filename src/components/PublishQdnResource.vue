@@ -25,17 +25,50 @@ export default {
             payloadText: null,
             payloadFile: null,
             base64: false,
-            payloadIsBase64: true,
+            payloadIsBase64: false,
+            warnIfExists: true,
             publishing: false,
+            publishPending: false,
+            publishSuccess: false,
         }
     },
 
     methods: {
 
+        markPending() {
+            this.publishSuccess = false
+            this.publishPending = true
+        },
+
+        async shouldOverwriteResource() {
+            const response = await qortalRequest({
+                action: 'LIST_QDN_RESOURCES',
+                service: this.service,
+                name: this.qordialAuthStore.username,
+                identifier: this.identifier,
+                limit: 1,
+            })
+
+            if (response.length) {
+                return confirm("Matching resource already exists!  Overwrite?")
+            }
+            return true
+        },
+
         async publish() {
+
+            if (this.warnIfExists) {
+                if (! await this.shouldOverwriteResource()) {
+                    return
+                }
+            }
+
             this.publishing = true
 
-            // TODO: we only support already-encoded base64 text so far
+            let data64 = this.payloadText || ''
+            if (!this.payloadIsBase64) {
+                data64 = await this.$qordial.stringToBase64(data64)
+            }
 
             let response
             try {
@@ -44,10 +77,11 @@ export default {
                     name: this.qordialAuthStore.username,
                     service: this.service,
                     identifier: this.identifier,
-                    data64: this.payloadText,
+                    data64,
                 })
                 if (response.reference) {
-                    alert("published okay!")
+                    this.publishPending = false
+                    this.publishSuccess = true
 
                 } else {
                     // console.log(response)
@@ -91,24 +125,28 @@ export default {
       </o-field>
       <o-field label="Service">
         <ServicePicker v-model="service" required
-                       :include-services="['DOCUMENT', 'JSON']" />
+                       :include-services="['DOCUMENT', 'JSON']"
+                       @input="markPending()" />
       </o-field>
       <o-field label="Identifier">
         <o-input v-model="identifier"
                  placeholder="leave blank for default"
-                 style="width: 50rem;" />
+                 style="width: 50rem;"
+                 @input="markPending()" />
       </o-field>
     </o-field>
 
     <o-field grouped>
       <o-field label="Payload Type">
-        <o-select v-model="payloadType" disabled>
+        <o-select v-model="payloadType" disabled
+                  @input="markPending()">
           <option value="file">file</option>
           <option value="text">text</option>
         </o-select>
       </o-field>
       <o-field label="Base64">
-        <o-checkbox v-model="payloadIsBase64" disabled>
+        <o-checkbox v-model="payloadIsBase64"
+                    @input="markPending()">
           {{ payloadType }} is
           {{ payloadIsBase64 ? "already" : "not yet" }}
           base64-encoded
@@ -116,42 +154,48 @@ export default {
       </o-field>
     </o-field>
 
-    <o-notification variant="warning">
-      Your text must already be base64-encoded!  (Will make that optional soon I hope.)
-    </o-notification>
-
     <o-field v-if="payloadType == 'file'"
              grouped>
       <o-field label="Payload File">
-        <o-input v-model="payloadFile" />
+        <o-input v-model="payloadFile"
+                 @input="markPending()" />
       </o-field>
     </o-field>
 
     <o-field v-if="payloadType == 'text'"
              label="Payload Text">
       <o-input v-model="payloadText"
-               type="textarea" />
+               type="textarea"
+               @input="markPending()" />
     </o-field>
 
     <o-field grouped>
-      <o-checkbox :value="false" disabled>
+      <o-checkbox v-model="warnIfExists">
         Warn me if a matching resource already exists
       </o-checkbox>
     </o-field>
 
-    <o-notification variant="warning">
-      <p class="block">
-        If a matching resource already exists, it will be overwritten!
-        (Hopefully soon will add the option to check first, and avoid accidental overwrite.)
-      </p>
-    </o-notification>
-
-    <o-button variant="primary"
-              icon-left="save"
-              :disabled="publishing || !qordialAuthStore.username"
-              @click="publish()">
-      {{ publishing ? "Working, please wait..." : "Publish" }}
-    </o-button>
+    <o-field grouped>
+      <o-button variant="primary"
+                icon-left="save"
+                :disabled="publishing || !qordialAuthStore.username"
+                @click="publish()">
+        {{ publishing ? "Working, please wait..." : "Publish" }}
+      </o-button>
+      <div style="width: 5rem;"></div>
+      <o-notification v-if="publishPending"
+                      variant="warning">
+        <p class="block">
+          The data shown has not yet been published.
+        </p>
+      </o-notification>
+      <o-notification v-if="publishSuccess"
+                      variant="success">
+        <p class="block">
+          The data shown has been published.
+        </p>
+      </o-notification>
+    </o-field>
 
   </div>
 </template>

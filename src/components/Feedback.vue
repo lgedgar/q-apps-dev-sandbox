@@ -61,35 +61,8 @@ export default {
             this.showDialog = true
         },
 
-        // nb. this function was copied/adapted from
-        // https://github.com/Qortal/q-shop/blob/98c5e7d37d7d00d1bf3290d24afe5f20388e1885/src/utils/toBase64.ts#L11
         async objectToBase64(obj) {
-          // Step 1: Convert the object to a JSON string
-          const jsonString = JSON.stringify(obj)
-
-          // Step 2: Create a Blob from the JSON string
-          const blob = new Blob([jsonString], { type: 'application/json' })
-
-          // Step 3: Create a FileReader to read the Blob as a base64-encoded string
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-              if (typeof reader.result === 'string') {
-                // Remove 'data:application/json;base64,' prefix
-                const base64 = reader.result.replace(
-                  'data:application/json;base64,',
-                  ''
-                )
-                resolve(base64)
-              } else {
-                reject(new Error('Failed to read the Blob as a base64-encoded string'))
-              }
-            }
-            reader.onerror = () => {
-              reject(reader.error)
-            }
-            reader.readAsDataURL(blob)
-          })
+          return await this.$qordial.stringToBase64(JSON.stringify(obj))
         },
 
         async sendFeedback() {
