@@ -1,11 +1,20 @@
 
 import packageData from '../package.json'
 
+let changelog
+let xmlhttp = new XMLHttpRequest()
+xmlhttp.open('GET', '../CHANGELOG.md', false)
+xmlhttp.send()
+if (xmlhttp.status == 200) {
+    changelog = xmlhttp.responseText
+}
+
 var appsettings = {
     appTitle: packageData.name,
     appVersion: packageData.version,
     appDependencies: packageData.dependencies,
     appRepository: 'your code repo URL here',
+    changelog: changelog,
     maintainerName: 'Your Name Here',
 };
 

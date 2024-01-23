@@ -1,5 +1,6 @@
 <script setup>
 import appsettings from '../appsettings'
+import {marked} from 'marked'
 </script>
 
 <script>
@@ -7,12 +8,15 @@ export default {
 
     data() {
         return {
-            appTitle: appsettings.appTitle,
-            appVersion: appsettings.appVersion,
-            appDependencies: appsettings.appDependencies,
-            appRepository: appsettings.appRepository,
-            appMaintainer: appsettings.maintainerName,
+            appsettings,
+            viewChangelog: false,
         }
+    },
+
+    computed: {
+        changelogHTML() {
+            return marked.parse(this.appsettings.changelog)
+        },
     },
 
     methods: {
@@ -20,7 +24,7 @@ export default {
         async showMaintainer() {
             await qortalRequest({
                 action: 'OPEN_PROFILE',
-                name: this.appMaintainer,
+                name: this.appsettings.maintainerName,
             })
         },
     },
@@ -31,26 +35,42 @@ export default {
   <div class="about">
 
     <o-field label="App Name" horizontal>
-      <span>{{ appTitle }}</span>
+      <span>{{ appsettings.appTitle }}</span>
     </o-field>
 
     <o-field label="App Version" horizontal>
-      <span>{{ appVersion }}</span>
+      <span>
+        {{ appsettings.appVersion }}
+        &mdash;
+        <a href="#" @click.prevent="viewChangelog = true">
+          view changelog
+        </a>
+      </span>
     </o-field>
+
+    <o-modal v-model:active="viewChangelog">
+      <div class="card">
+        <div class="card-content">
+          <iframe :srcdoc="changelogHTML"
+                  style="width: 100%; min-height: 100vh;">
+          </iframe>
+        </div>
+      </div>
+    </o-modal>
 
     <o-field label="Maintainer" horizontal>
       <a href="#" @click.prevent="showMaintainer()">
-        {{ appMaintainer }}
+        {{ appsettings.maintainerName }}
       </a>
     </o-field>
 
     <o-field label="Code Repo" horizontal>
-      <span>{{ appRepository }}</span>
+      <span>{{ appsettings.appRepository }}</span>
     </o-field>
 
     <o-field label="Dependencies" horizontal>
       <ul>
-        <li v-for="(ver, pkg, i) in appDependencies"
+        <li v-for="(ver, pkg, i) in appsettings.appDependencies"
             :key="pkg">
           {{ pkg }} {{ ver }}
         </li>
