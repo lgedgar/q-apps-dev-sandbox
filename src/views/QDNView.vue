@@ -1,6 +1,7 @@
 <script setup>
 import moment from 'moment'
 import PublishQdnResource from '../components/PublishQdnResource.vue'
+import useClipboard from 'vue-clipboard3'
 
 // nb. this was copied from https://stackoverflow.com/a/18650828
 function formatBytes(bytes, decimals = 2) {
@@ -133,8 +134,9 @@ export default {
             })
         },
 
-        copyIdentifier(resource) {
-            navigator.clipboard.writeText(resource.identifier)
+        async copyIdentifier(resource) {
+            const { toClipboard } = useClipboard()
+            await toClipboard(resource.identifier)
         },
 
         isDownloadable(resource) {
@@ -373,7 +375,8 @@ export default {
               <o-table-column label="Identifier"
                               v-slot="{ row }">
                 {{ row.identifier }}
-                <a href="#" @click.prevent="copyIdentifier(row)">
+                <a v-if="row.identifier"
+                   href="#" @click.prevent="copyIdentifier(row)">
                   <o-icon icon="copy" />
                 </a>
               </o-table-column>
