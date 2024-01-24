@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.3 - 2024-01-23
+
 ### Added
 
 - New "Q-Tube" panel in the QDN view, to support basic "re-publish video" scenario.
+- Add way to show app changelog, in about page.
 
 ### Changed
 
