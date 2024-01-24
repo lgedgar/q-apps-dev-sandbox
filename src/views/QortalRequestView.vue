@@ -374,6 +374,11 @@ export default {
                 params: [
 
                     {
+                        name: 'mode',
+                        type: String,
+                        description: "Specify \"ALL\" to get all results.  Default behavior returns just one result of each type.",
+                    },
+                    {
                         name: 'service',
                         type: String,
                     },

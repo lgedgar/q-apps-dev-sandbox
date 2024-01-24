@@ -1,6 +1,6 @@
 <script setup>
 import { mapStores } from 'pinia'
-import {useQordialAuthStore, ServicePicker} from 'qordial'
+import {useQordialAuthStore, NameInput, ServicePicker} from 'qordial'
 </script>
 
 <script>
@@ -26,7 +26,6 @@ export default {
             payloadFile: null,
             base64: false,
             payloadIsBase64: false,
-            warnIfExists: true,
             publishing: false,
             publishPending: false,
             publishSuccess: false,
@@ -40,30 +39,19 @@ export default {
             this.publishPending = true
         },
 
-        async shouldOverwriteResource() {
-            const response = await qortalRequest({
-                action: 'LIST_QDN_RESOURCES',
-                service: this.service,
-                name: this.qordialAuthStore.username,
-                identifier: this.identifier,
-                limit: 1,
-            })
-
-            if (response.length) {
-                return confirm("Matching resource already exists!  Overwrite?")
-            }
-            return true
-        },
-
         async publish() {
+            this.publishing = true
 
-            if (this.warnIfExists) {
-                if (! await this.shouldOverwriteResource()) {
-                    return
-                }
+            const resourceParams = {
+                name: this.qordialAuthStore.username,
+                service: this.service,
+                identifier: this.identifier,
             }
 
-            this.publishing = true
+            if (! await this.$qordial.confirmPublish(resourceParams)) {
+                this.publishing = false
+                return
+            }
 
             let data64 = this.payloadText || ''
             if (!this.payloadIsBase64) {
@@ -74,9 +62,7 @@ export default {
             try {
                 response = await qortalRequest({
                     action: 'PUBLISH_QDN_RESOURCE',
-                    name: this.qordialAuthStore.username,
-                    service: this.service,
-                    identifier: this.identifier,
+                    ...resourceParams,
                     data64,
                 })
                 if (response.reference) {
@@ -89,7 +75,9 @@ export default {
                 }
             } catch (error) {
                 // console.log(error)
-                alert("publish error:\n\n" + error)
+                if (error?.error != "User declined request") {
+                    alert("publish error:\n\n" + JSON.stringify(error))
+                }
             }
 
             this.publishing = false
@@ -115,17 +103,11 @@ export default {
 
     <o-field grouped>
       <o-field label="Name">
-        <o-button v-if="!qordialAuthStore.address"
-                  variant="primary"
-                  @click="$qordial.authenticate()">
-          please authenticate
-        </o-button>
-        <o-input v-if="qordialAuthStore.address"
-                 v-model="qordialAuthStore.username" disabled />
+        <NameInput />
       </o-field>
       <o-field label="Service">
         <ServicePicker v-model="service" required
-                       :include-services="['DOCUMENT', 'JSON']"
+                       :include-services="['BLOG_COMMENT', 'DOCUMENT', 'JSON']"
                        @input="markPending()" />
       </o-field>
       <o-field label="Identifier">
@@ -167,12 +149,6 @@ export default {
       <o-input v-model="payloadText"
                type="textarea"
                @input="markPending()" />
-    </o-field>
-
-    <o-field grouped>
-      <o-checkbox v-model="warnIfExists">
-        Warn me if a matching resource already exists
-      </o-checkbox>
     </o-field>
 
     <o-field grouped>
