@@ -2,7 +2,8 @@
 import { mapStores } from 'pinia'
 import {useQordialAuthStore, JsonModal, NameInput, PrettyBytes, PrettyIdentifier, PrettyTime, ResourceDownloader} from 'qordial'
 import VCodeBlock from '@wdns/vue-code-block'
-import Compressor from 'compressorjs'
+import QtubeVideoThumbnail from './QtubeVideoThumbnail.vue'
+import QtubeImagePicker from './QtubeImagePicker.vue'
 </script>
 
 <script>
@@ -24,8 +25,12 @@ export default {
             qtubeVideoEditing: false,
             qtubeVideoEditingResourceName: null,
             qtubeVideoEditingResourceIdentifier: null,
+            qtubeVideoEditingIdentifierSuffix: null,
             qtubeVideoEditingObject: {},
-            qtubeVideoEditingImageFile: null,
+            qtubeVideoEditingExtract1: null,
+            qtubeVideoEditingExtract2: null,
+            qtubeVideoEditingExtract3: null,
+            qtubeVideoEditingExtract4: null,
             qtubeVideoPublishing: false,
 
             videoResourcesLimit: 20,
@@ -43,47 +48,9 @@ export default {
         qtubeVideoEditingHtmlDescription() {
             return this.$refs.qtubeVideoEditingDescriptionSafe.innerHTML
         },
-
-        qtubeVideoEditingVideoImageSize() {
-            if (this.qtubeVideoEditingObject.videoImage) {
-                return this.$qordial.formatBytes(this.qtubeVideoEditingObject.videoImage.length)
-            }
-        },
     },
 
     methods: {
-
-        async qtubeVideoEditingEncodeImage() {
-            if (!this.qtubeVideoEditingImageFile) {
-                return
-            }
-
-            // nb. this was heavily inspired by
-            // https://github.com/Qortal/q-tube/blob/ab8d9d1983b6fb5274f1e2f94e1d611025807fca/src/components/PublishVideo/PublishVideo.tsx#L578
-            let compressedFile
-            await new Promise(resolve => {
-                new Compressor(this.qtubeVideoEditingImageFile, {
-                    quality: 0.8,
-                    maxWidth: 750,
-                    mimeType: 'image/webp',
-                    success(result) {
-                        const file = new File([result], "name", {
-                            type: "image/webp",
-                        });
-                        compressedFile = file;
-                        resolve();
-                    },
-                    error(err) {},
-                })
-            })
-
-            if (!compressedFile) {
-                alert("compress error?")
-                return
-            }
-
-            this.qtubeVideoEditingObject.videoImage = await this.$qordial.fileToBase64(compressedFile)
-        },
 
         async qtubeVideosRefresh() {
             this.qtubeVideosLoading = true
@@ -95,7 +62,7 @@ export default {
 
         async showQtubeVideoDocument(resource) {
             this.qtubeVideoDocumentResource = resource
-            this.qtubeVideoDocument = await this.$qordial.fetchResourceJSON(resource)
+            this.qtubeVideoDocument = await this.$qordial.fetchResourceObject(resource)
             this.qtubeVideoShowJSON = false
             this.qtubeVideoFileSize = null
             const vidref = this.qtubeVideoDocument?.videoReference
@@ -132,6 +99,11 @@ export default {
                 this.qtubeVideoEditingObject = await this.$qordial.fetchResourceObject(resource)
                 this.qtubeVideoEditingIdentifierSuffix = null
 
+                this.qtubeVideoEditingExtract1 = this.qtubeVideoEditingObject?.extracts?.[0] || null
+                this.qtubeVideoEditingExtract2 = this.qtubeVideoEditingObject?.extracts?.[1] || null
+                this.qtubeVideoEditingExtract3 = this.qtubeVideoEditingObject?.extracts?.[2] || null
+                this.qtubeVideoEditingExtract4 = this.qtubeVideoEditingObject?.extracts?.[3] || null
+
             } else if (videoResource) {
 
                 // fetch metadata for the given VIDEO resource and
@@ -149,6 +121,11 @@ export default {
                         identifier: videoResource.identifier,
                     },
                 }
+
+                this.qtubeVideoEditingExtract1 = null
+                this.qtubeVideoEditingExtract2 = null
+                this.qtubeVideoEditingExtract3 = null
+                this.qtubeVideoEditingExtract4 = null
 
                 // nb. video metadata description may have other data
                 // embedded within it; strip that out if so
@@ -171,8 +148,10 @@ export default {
             }
 
             // show edit dialog
-            this.qtubeVideoEditingImageFile = null
             this.qtubeVideoEditing = true
+            this.$nextTick(() => {
+                this.$refs.qtubeEditTop.scrollIntoView()
+            })
         },
 
         async qtubeVideoPublish() {
@@ -201,9 +180,26 @@ export default {
                 }
             }
 
+            const extracts = []
+            if (this.qtubeVideoEditingExtract1) {
+                extracts.push(this.qtubeVideoEditingExtract1)
+            }
+            if (this.qtubeVideoEditingExtract2) {
+                extracts.push(this.qtubeVideoEditingExtract2)
+            }
+            if (this.qtubeVideoEditingExtract3) {
+                extracts.push(this.qtubeVideoEditingExtract3)
+            }
+            if (this.qtubeVideoEditingExtract4) {
+                extracts.push(this.qtubeVideoEditingExtract4)
+            }
+
             const metadata = {
                 ...this.qtubeVideoEditingObject,
                 htmlDescription: this.qtubeVideoEditingHtmlDescription,
+            }
+            if (extracts.length) {
+                metadata.extracts = extracts
             }
             if (!this.qtubeVideoEditingResourceName) {
                 // specify schema version when creating new DOCUMENT
@@ -411,9 +407,9 @@ export default {
               </div>
               <div class="column">
 
-                <img v-if="qtubeVideoDocument.videoImage"
-                     :src="qtubeVideoDocument.videoImage"
-                     style="max-height: 250px; max-width: 400px;" />
+                <QtubeVideoThumbnail v-if="qtubeVideoDocument.videoImage"
+                                     :video-image="qtubeVideoDocument.videoImage"
+                                     :frame-images="qtubeVideoDocument.extracts || []" />
 
               </div>
             </div>
@@ -439,6 +435,7 @@ export default {
       </o-modal>
 
       <o-modal v-model:active="qtubeVideoEditing">
+        <div ref="qtubeEditTop"></div>
         <div class="card">
 
           <div class="card-header">
@@ -474,37 +471,21 @@ export default {
                  v-html="`<p>${qtubeVideoEditingObject.fullDescription}</p>`">
             </div>
 
-            <o-field grouped>
-              <o-field label="MIME Type">
-                <o-input v-model="qtubeVideoEditingObject.videoType" />
-              </o-field>
-
-              <div style="display: flex; flex-direction: column;">
-                <o-field label="Image File">
-                  <o-upload v-model="qtubeVideoEditingImageFile"
-                            @update:model-value="qtubeVideoEditingEncodeImage()">
-
-                    <o-button tag="a" variant="primary">
-                      <o-icon icon="file" />
-                      <span>Choose</span>
-                    </o-button>
-
-                  </o-upload>
-                  <span v-if="qtubeVideoEditingImageFile" class="file-name">
-                    {{ qtubeVideoEditingImageFile.name }}
-                  </span>
-                </o-field>
-                <div v-if="qtubeVideoEditingObject.videoImage"
-                     style="display: flex; gap: 1rem;">
-                  <img :src="qtubeVideoEditingObject.videoImage"
-                       style="max-height: 250px; max-width: 400px;" />
-                  <o-field label="Size" horizontal>
-                    {{ qtubeVideoEditingVideoImageSize }}
-                  </o-field>
-                </div>
-              </div>
-
+            <o-field label="MIME Type">
+              <o-input v-model="qtubeVideoEditingObject.videoType" />
             </o-field>
+
+            <QtubeImagePicker label="Video Image"
+                              v-model="qtubeVideoEditingObject.videoImage" />
+
+            <QtubeImagePicker label="Extract #1"
+                              v-model="qtubeVideoEditingExtract1" />
+            <QtubeImagePicker label="Extract #2"
+                              v-model="qtubeVideoEditingExtract2" />
+            <QtubeImagePicker label="Extract #3"
+                              v-model="qtubeVideoEditingExtract3" />
+            <QtubeImagePicker label="Extract #4"
+                              v-model="qtubeVideoEditingExtract4" />
 
             <div v-if="!qtubeVideoEditingResourceName"
                  style="display: flex; gap: 1rem; width: 100%;">
