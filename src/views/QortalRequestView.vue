@@ -248,6 +248,17 @@ export default {
                 ],
             },
 
+            OPEN_NEW_TAB: {
+                description: "Opens a new tab with the specified URL inside the Qortal UI.",
+                params: [
+                    {
+                        name: 'qortalLink',
+                        type: String,
+                        required: true,
+                    },
+                ],
+            },
+
             OPEN_PROFILE: {
                 description: "Opens a user's profile if they have one. Note: this will open a modal with \"This name has no profile\" if that is the case.",
                 params: [
