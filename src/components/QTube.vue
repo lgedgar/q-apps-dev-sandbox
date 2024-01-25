@@ -18,6 +18,15 @@ export default {
 
             qtubeVideoShowDocument: false,
             qtubeVideoDocument: null,
+            qtubeVideoFileSize: null,
+            qtubeVideoShowJSON: null,
+
+            qtubeVideoEditing: false,
+            qtubeVideoEditingResourceName: null,
+            qtubeVideoEditingResourceIdentifier: null,
+            qtubeVideoEditingObject: {},
+            qtubeVideoEditingImageFile: null,
+            qtubeVideoPublishing: false,
 
             videoResourcesLimit: 20,
             videoResourcesData: null,
@@ -25,38 +34,27 @@ export default {
 
             videoResourceShowMetadata: false,
             videoResourceMetadata: null,
-
-            publishShowDialog: false,
-            publishVideoReference: null,
-            publishTitle: null,
-            publishDescription: null,
-            publishMimeType: null,
-            publishImageFile: null,
-            publishVideoImage: null,
-            publishIdentifierSuffix: null,
-            publishing: false,
         }
     },
 
     computed: {
         ...mapStores(useQordialAuthStore),
 
-        htmlDescriptionSafe() {
-            return this.$refs.publishDescriptionSafe.innerHTML
+        qtubeVideoEditingHtmlDescription() {
+            return this.$refs.qtubeVideoEditingDescriptionSafe.innerHTML
         },
 
-        publishVideoImageSize() {
-            if (this.publishVideoImage) {
-                return this.$qordial.formatBytes(this.publishVideoImage.length)
+        qtubeVideoEditingVideoImageSize() {
+            if (this.qtubeVideoEditingObject.videoImage) {
+                return this.$qordial.formatBytes(this.qtubeVideoEditingObject.videoImage.length)
             }
         },
     },
 
     methods: {
 
-        async encodeImage() {
-
-            if (!this.publishImageFile) {
+        async qtubeVideoEditingEncodeImage() {
+            if (!this.qtubeVideoEditingImageFile) {
                 return
             }
 
@@ -64,7 +62,7 @@ export default {
             // https://github.com/Qortal/q-tube/blob/ab8d9d1983b6fb5274f1e2f94e1d611025807fca/src/components/PublishVideo/PublishVideo.tsx#L578
             let compressedFile
             await new Promise(resolve => {
-                new Compressor(this.publishImageFile, {
+                new Compressor(this.qtubeVideoEditingImageFile, {
                     quality: 0.8,
                     maxWidth: 750,
                     mimeType: 'image/webp',
@@ -84,7 +82,7 @@ export default {
                 return
             }
 
-            this.publishVideoImage = await this.$qordial.fileToBase64(compressedFile)
+            this.qtubeVideoEditingObject.videoImage = await this.$qordial.fileToBase64(compressedFile)
         },
 
         async qtubeVideosRefresh() {
@@ -93,6 +91,153 @@ export default {
             const response = await fetch(url)
             this.qtubeVideosData = await response.json()
             this.qtubeVideosLoading = false
+        },
+
+        async showQtubeVideoDocument(resource) {
+            this.qtubeVideoDocumentResource = resource
+            this.qtubeVideoDocument = await this.$qordial.fetchResourceJSON(resource)
+            this.qtubeVideoShowJSON = false
+            this.qtubeVideoFileSize = null
+            const vidref = this.qtubeVideoDocument?.videoReference
+
+            // must fetch file size from VIDEO resource
+            if (vidref?.name && vidref?.identifier) {
+                const response = await qortalRequest({
+                    action: 'LIST_QDN_RESOURCES',
+                    service: 'VIDEO',
+                    name: vidref.name,
+                    identifier: vidref.identifier,
+                })
+                if (response.length) {
+                    this.qtubeVideoFileSize = response[0].size
+                }
+            }
+
+            this.qtubeVideoShowDocument = true
+        },
+
+        async qtubeVideoInitEdit(resource, videoResource) {
+
+            // just in case view dialog is open, close it
+            // TODO: should maybe check first, and re-show view dialog
+            // if user cancels edit
+            this.qtubeVideoShowDocument = false
+
+            // establish what we're editing
+            if (resource) {
+
+                // fetch and edit the given DOCUMENT resource
+                this.qtubeVideoEditingResourceName = resource.name
+                this.qtubeVideoEditingResourceIdentifier = resource.identifier
+                this.qtubeVideoEditingObject = await this.$qordial.fetchResourceObject(resource)
+                this.qtubeVideoEditingIdentifierSuffix = null
+
+            } else if (videoResource) {
+
+                // fetch metadata for the given VIDEO resource and
+                // create a new DOCUMENT for Q-Tube
+                const metadata = await this.$qordial.fetchResourceMetadata(videoResource)
+                this.qtubeVideoEditingResourceName = null
+                this.qtubeVideoEditingResourceIdentifier = null
+                this.qtubeVideoEditingObject = {
+                    title: metadata?.title,
+                    fullDescription: metadata?.description,
+                    videoType: metadata?.mimeType,
+                    videoReference: {
+                        service: videoResource.service,
+                        name: videoResource.name,
+                        identifier: videoResource.identifier,
+                    },
+                }
+
+                // nb. video metadata description may have other data
+                // embedded within it; strip that out if so
+                if (this.qtubeVideoEditingObject.fullDescription) {
+                    this.qtubeVideoEditingObject.fullDescription =
+                        this.qtubeVideoEditingObject.fullDescription.replace(
+                            /^\*\*category.+code:.+\*\*/,
+                            '')
+                }
+
+                // suggest default identifier for new DOCUMENT
+                // resource, based on VIDEO identifier
+                this.qtubeVideoEditingIdentifierSuffix = videoResource.identifier + '_metadata'
+                // nb. must strip away qtube prefix if already present
+                if (this.qtubeVideoEditingIdentifierSuffix.startsWith(this.qtubeIdentifierPrefix)) {
+                    this.qtubeVideoEditingIdentifierSuffix =
+                        this.qtubeVideoEditingIdentifierSuffix.slice(
+                            this.qtubeIdentifierPrefix.length)
+                }
+            }
+
+            // show edit dialog
+            this.qtubeVideoEditingImageFile = null
+            this.qtubeVideoEditing = true
+        },
+
+        async qtubeVideoPublish() {
+
+            if (!this.qtubeVideoEditingObject.videoImage) {
+                alert("Image File is required for publishing to Q-Tube.")
+                return
+            }
+
+            this.qtubeVideoPublishing = true
+
+            const resourceParams = {
+                service: 'DOCUMENT',
+                name: this.qordialAuthStore.username,
+            }
+            if (this.qtubeVideoEditingResourceName) {
+                // editing an existing DOCUMENT, no need to confirm
+                resourceParams.identifier = this.qtubeVideoEditingResourceIdentifier
+            } else {
+                // supposedly creating a new DOCUMENT but should double-check
+                // TODO: should validate the identifier somehow?
+                resourceParams.identifier = this.qtubeIdentifierPrefix + this.qtubeVideoEditingIdentifierSuffix
+                if (! await this.$qordial.confirmPublish(resourceParams)) {
+                    this.qtubeVideoPublishing = false
+                    return
+                }
+            }
+
+            const metadata = {
+                ...this.qtubeVideoEditingObject,
+                htmlDescription: this.qtubeVideoEditingHtmlDescription,
+            }
+            if (!this.qtubeVideoEditingResourceName) {
+                // specify schema version when creating new DOCUMENT
+                metadata.version = 1
+            }
+
+            try {
+                await qortalRequest({
+                    action: 'PUBLISH_QDN_RESOURCE',
+                    ...resourceParams,
+                    data64: await this.$qordial.objectToBase64(metadata)
+                })
+            } catch (error) {
+                if (error?.error != "User declined request") {
+                    alert("publish error:\n\n" + JSON.stringify(error))
+                }
+                this.qtubeVideoPublishing = false
+                return
+            }
+
+            alert("video was published!")
+            this.qtubeVideoPublishing = false
+            this.qtubeVideoEditing = false
+        },
+
+        async downloadResource(resource) {
+            return await this.$refs.downloader.downloadResource(resource)
+        },
+
+        async viewInQtube(resource) {
+            await qortalRequest({
+                action: 'OPEN_NEW_TAB',
+                qortalLink: `qortal://APP/Q-Tube/video/${resource.name}/${resource.identifier}`,
+            })
         },
 
         async videoResourcesRefresh() {
@@ -109,107 +254,9 @@ export default {
             this.videoResourcesLoading = false
         },
 
-        async showQtubeVideoDocument(resource) {
-            this.qtubeVideoDocument = await this.$qordial.fetchResourceJSON(resource)
-            this.qtubeVideoShowDocument = true
-        },
-
-        async viewInQtube(resource) {
-            await qortalRequest({
-                action: 'OPEN_NEW_TAB',
-                qortalLink: `qortal://APP/Q-Tube/video/${resource.name}/${resource.identifier}`,
-            })
-        },
-
-        async downloadResource(resource) {
-            return await this.$refs.downloader.downloadResource(resource)
-        },
-
         async showVideoResourceMetadata(resource) {
             this.videoResourceMetadata = await this.$qordial.fetchResourceMetadata(resource)
             this.videoResourceShowMetadata = true
-        },
-
-        async publishInit(resource) {
-            const metadata = await this.$qordial.fetchResourceMetadata(resource)
-
-            this.publishTitle = metadata?.title
-            this.publishDescription = metadata?.description
-            this.publishMimeType = metadata?.mimeType
-            this.publishVideoReference = resource
-            this.publishImageFile = null
-            this.publishVideoImage = null
-
-            // video metadata description may have other data embedded
-            // within it; strip that out if so
-            if (this.publishDescription) {
-                this.publishDescription = this.publishDescription.replace(
-                    /^\*\*category.+code:.+\*\*/,
-                    '')
-            }
-
-            this.publishIdentifierSuffix = resource.identifier + '_metadata'
-            // nb. must strip away qtube prefix if already present
-            if (this.publishIdentifierSuffix.startsWith(this.qtubeIdentifierPrefix)) {
-                this.publishIdentifierSuffix = this.publishIdentifierSuffix.slice(
-                    this.qtubeIdentifierPrefix.length)
-            }
-
-            this.publishShowDialog = true
-        },
-
-        async publishSubmit() {
-
-            if (!this.publishVideoImage) {
-                alert("Image File is required for publishing to Q-Tube.")
-                return
-            }
-
-            this.publishing = true
-
-            const resourceParams = {
-                name: this.qordialAuthStore.username,
-                service: 'DOCUMENT',
-                // TODO: should validate this somehow?
-                identifier: this.qtubeIdentifierPrefix + this.publishIdentifierSuffix,
-            }
-
-            if (! await this.$qordial.confirmPublish(resourceParams)) {
-                this.publishing = false
-                return
-            }
-
-            const metadata = {
-                title: this.publishTitle,
-                version: 1,
-                fullDescription: this.publishDescription,
-                htmlDescription: this.htmlDescriptionSafe,
-                videoReference: {
-                    service: 'VIDEO',
-                    name: this.publishVideoReference.name,
-                    identifier: this.publishVideoReference.identifier,
-                },
-                videoType: this.publishMimeType,
-                videoImage: this.publishVideoImage,
-            }
-
-            try {
-                const response = await qortalRequest({
-                    action: 'PUBLISH_QDN_RESOURCE',
-                    ...resourceParams,
-                    data64: await this.$qordial.stringToBase64(JSON.stringify(metadata))
-                })
-            } catch (error) {
-                if (error?.error != "User declined request") {
-                    alert("publish error:\n\n" + JSON.stringify(error))
-                }
-                this.publishing = false
-                return
-            }
-
-            alert("video was published!")
-            this.publishing = false
-            this.publishShowDialog = false
         },
     },
 }
@@ -285,6 +332,11 @@ export default {
               <span>View</span>
             </a>
 
+            <a href="#" @click.prevent="qtubeVideoInitEdit(row)">
+              <o-icon icon="edit" />
+              <span>Edit</span>
+            </a>
+
             <a href="#" @click.prevent="downloadResource(row)">
               <o-icon icon="download" />
               <span>Download</span>
@@ -300,9 +352,193 @@ export default {
         </o-table-column>
       </o-table>
 
-      <JsonModal v-model:active="qtubeVideoShowDocument"
-                 title="Q-Tube Video"
-                 :json="qtubeVideoDocument" />
+      <o-modal v-model:active="qtubeVideoShowDocument">
+        <div class="card">
+
+          <div class="card-header">
+            <div class="card-header-title">Q-Tube Video</div>
+          </div>
+
+          <div class="card-content"
+               v-if="qtubeVideoDocument">
+
+            <div class="columns">
+
+              <div class="column">
+
+                <h3 class="is-size-3">
+                  <span>{{ qtubeVideoDocument.title }}</span>
+                </h3>
+
+                <div v-if="qtubeVideoDocument.htmlDescription"
+                     v-html="qtubeVideoDocument.htmlDescription">
+                </div>
+                <div v-else>
+                  {{ qtubeVideoDocument.fullDescription }}
+                </div>
+
+                <div class="block"></div>
+
+                <o-field grouped>
+
+                <o-field label="Video Type">
+                  <span>{{ qtubeVideoDocument.videoType }}</span>
+                </o-field>
+
+                <o-field label="File Size">
+                  <PrettyBytes :value="qtubeVideoFileSize" />
+                </o-field>
+
+                </o-field>
+
+                <o-field label="Filename">
+                  <span>{{ qtubeVideoDocument.filename }}</span>
+                </o-field>
+
+                <o-field grouped>
+                  <o-field label="Created">
+                    <PrettyTime :value="qtubeVideoDocumentResource.created" />
+                  </o-field>
+                  <o-field label="Updated">
+                    <PrettyTime :value="qtubeVideoDocumentResource.updated" />
+                  </o-field>
+                </o-field>
+
+                <o-field label="Identifier">
+                  <PrettyIdentifier :value="qtubeVideoDocumentResource.identifier" />
+                </o-field>
+
+              </div>
+              <div class="column">
+
+                <img v-if="qtubeVideoDocument.videoImage"
+                     :src="qtubeVideoDocument.videoImage"
+                     style="max-height: 250px; max-width: 400px;" />
+
+              </div>
+            </div>
+
+            <div class="block"
+                 style="display: flex; justify-content: space-between;">
+              <o-button @click="qtubeVideoShowJSON = !qtubeVideoShowJSON">
+                {{ qtubeVideoShowJSON ? "Hide" : "Show" }} JSON
+              </o-button>
+              <o-button variant="primary"
+                        icon-left="edit"
+                        @click="qtubeVideoInitEdit(qtubeVideoDocumentResource)">
+                Edit This
+              </o-button>
+            </div>
+
+            <div v-if="qtubeVideoShowJSON">
+              <VCodeBlock :code="JSON.stringify(qtubeVideoDocument, null, 2)" highlightjs />
+            </div>
+
+          </div>
+        </div>
+      </o-modal>
+
+      <o-modal v-model:active="qtubeVideoEditing">
+        <div class="card">
+
+          <div class="card-header">
+            <div class="card-header-title">
+              {{ qtubeVideoEditingResourceName ? "Edit" : "Create" }}
+              Q-Tube Video
+            </div>
+          </div>
+
+          <div class="card-content">
+
+            <o-field v-if="qtubeVideoEditingResourceName"
+                     grouped class="is-pulled-right">
+              <o-field label="Name" horizontal>
+                <span>{{ qtubeVideoEditingResourceName }}</span>
+              </o-field>
+              <o-field label="Identifier" horizontal>
+                <PrettyIdentifier :value="qtubeVideoEditingResourceIdentifier" />
+              </o-field>
+            </o-field>
+
+            <o-field label="Title">
+              <o-input v-model="qtubeVideoEditingObject.title" />
+            </o-field>
+
+            <o-field label="Description">
+              <o-input v-model="qtubeVideoEditingObject.fullDescription"
+                       type="textarea" />
+            </o-field>
+            <!-- TODO: is this trick actually enough to sanitize input? -->
+            <div ref="qtubeVideoEditingDescriptionSafe"
+                 style="display: none;"
+                 v-html="`<p>${qtubeVideoEditingObject.fullDescription}</p>`">
+            </div>
+
+            <o-field grouped>
+              <o-field label="MIME Type">
+                <o-input v-model="qtubeVideoEditingObject.videoType" />
+              </o-field>
+
+              <div style="display: flex; flex-direction: column;">
+                <o-field label="Image File">
+                  <o-upload v-model="qtubeVideoEditingImageFile"
+                            @update:model-value="qtubeVideoEditingEncodeImage()">
+
+                    <o-button tag="a" variant="primary">
+                      <o-icon icon="file" />
+                      <span>Choose</span>
+                    </o-button>
+
+                  </o-upload>
+                  <span v-if="qtubeVideoEditingImageFile" class="file-name">
+                    {{ qtubeVideoEditingImageFile.name }}
+                  </span>
+                </o-field>
+                <div v-if="qtubeVideoEditingObject.videoImage"
+                     style="display: flex; gap: 1rem;">
+                  <img :src="qtubeVideoEditingObject.videoImage"
+                       style="max-height: 250px; max-width: 400px;" />
+                  <o-field label="Size" horizontal>
+                    {{ qtubeVideoEditingVideoImageSize }}
+                  </o-field>
+                </div>
+              </div>
+
+            </o-field>
+
+            <div v-if="!qtubeVideoEditingResourceName"
+                 style="display: flex; gap: 1rem; width: 100%;">
+              <o-field label="Name">
+                <NameInput />
+              </o-field>
+              <div style="flex-grow: 1;">
+                <o-field label="Identifier" expanded>
+                  <!-- TODO: why is this div needed?! -->
+                  <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+                    <span>{{ qtubeIdentifierPrefix }}</span>
+                    <o-input v-model="qtubeVideoEditingIdentifierSuffix" expanded />
+                  </div>
+                </o-field>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="card-footer-item buttons">
+                <o-button variant="primary"
+                          @click="qtubeVideoPublish()"
+                          icon-left="save"
+                          :disabled="qtubeVideoPublishing">
+                  {{ qtubeVideoPublishing ? "Working, please wait..." : "Publish" }}
+                </o-button>
+                <o-button @click="qtubeVideoEditing = false">
+                  Cancel
+                </o-button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </o-modal>
 
       <h3 class="is-size-3 has-text-primary"
           style="margin-top: 3rem;">
@@ -367,7 +603,7 @@ export default {
               <span>Download</span>
             </a>
 
-            <a href="#" @click.prevent="publishInit(row)">
+            <a href="#" @click.prevent="qtubeVideoInitEdit(null, row)">
               <o-icon icon="upload" />
               <span>Publish to Q-Tube</span>
             </a>
@@ -379,83 +615,6 @@ export default {
       <JsonModal v-model:active="videoResourceShowMetadata"
                  title="Resource Metadata"
                  :json="videoResourceMetadata" />
-
-      <o-modal v-model:active="publishShowDialog">
-        <div class="card">
-
-          <div class="card-header">
-            <div class="card-header-title">Publish to Q-Tube</div>
-          </div>
-
-          <div class="card-content">
-            <o-field label="Title">
-              <o-input v-model="publishTitle" />
-            </o-field>
-            <o-field label="Description">
-              <o-input v-model="publishDescription"
-                       type="textarea" />
-            </o-field>
-            <!-- TODO: is this trick actually enough to sanitize input? -->
-            <div ref="publishDescriptionSafe"
-                 style="display: none;"
-                 v-html="`<p>${publishDescription}</p>`">
-            </div>
-            <o-field grouped>
-              <o-field label="MIME Type">
-                <o-input v-model="publishMimeType" />
-              </o-field>
-              <div style="display: flex; flex-direction: column;">
-              <o-field label="Image File">
-                <o-upload v-model="publishImageFile"
-                          @update:model-value="encodeImage()">
-
-                  <o-button tag="a" variant="primary">
-                    <o-icon icon="file" />
-                    <span>Choose</span>
-                  </o-button>
-
-                </o-upload>
-                <span v-if="publishImageFile" class="file-name">
-                  {{ publishImageFile.name }}
-                </span>
-              </o-field>
-              <div v-if="publishVideoImage"
-                   style="display: flex; gap: 1rem;">
-                <img :src="publishVideoImage"
-                     style="max-height: 250px; max-width: 400px;" />
-                <o-field label="Size" horizontal>
-                  {{ publishVideoImageSize }}
-                </o-field>
-              </div>
-              </div>
-            </o-field>
-            <o-field label="Identifier">
-              <!-- TODO: why is this div needed?! -->
-              <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
-                <span>{{ qtubeIdentifierPrefix }}</span>
-                <o-input v-model="publishIdentifierSuffix" expanded />
-              </div>
-            </o-field>
-          </div>
-
-        <div class="card-footer">
-          <div class="card-footer-item buttons">
-
-            <o-button variant="primary"
-                      @click="publishSubmit()"
-                      icon-left="save"
-                      :disabled="publishing">
-              {{ publishing ? "Working, please wait..." : "Publish" }}
-            </o-button>
-            <o-button @click="publishShowDialog = false">
-              Cancel
-            </o-button>
-
-          </div>
-        </div>
-
-        </div>
-      </o-modal>
 
     </div>
   </div>

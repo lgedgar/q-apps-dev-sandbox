@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Proper "view Q-Tube video" dialog, to display basic details.
+- New "edit video" dialog for existing Q-Tube metadata.
+
+### Changed
+
+- Refactored "publish to Q-Tube" dialog to leverage "edit video" logic.
+
 ## 0.1.3 - 2024-01-23
 
 ### Added
