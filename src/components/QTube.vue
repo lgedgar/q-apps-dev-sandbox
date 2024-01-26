@@ -4,6 +4,7 @@ import {useQordialAuthStore, JsonModal, NameInput, PrettyBytes, PrettyIdentifier
 import VCodeBlock from '@wdns/vue-code-block'
 import QtubeVideoThumbnail from './QtubeVideoThumbnail.vue'
 import QtubeImagePicker from './QtubeImagePicker.vue'
+import FrameExtractor from './FrameExtractor.vue'
 </script>
 
 <script>
@@ -33,6 +34,11 @@ export default {
             qtubeVideoEditingExtract4: null,
             qtubeVideoPublishing: false,
 
+            coverImageSource: 'extract1',
+            coverImageOther: null,
+            magicFileURL: null,
+            magicExtracting: false,
+
             videoResourcesLimit: 20,
             videoResourcesData: null,
             videoResourcesLoading: false,
@@ -50,7 +56,61 @@ export default {
         },
     },
 
+    watch: {
+        coverImageSource (to, from) {
+            if (to == 'extract1') {
+                this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract1
+            } else if (to == 'extract2') {
+                this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract2
+            } else if (to == 'extract3') {
+                this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract3
+            } else if (to == 'extract4') {
+                this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract4
+            } else {
+                this.qtubeVideoEditingObject.videoImage = this.coverImageOther
+            }
+        },
+    },
+
     methods: {
+
+        async magicExtract() {
+
+            // warn user about size of potential download
+            const size = await this.fetchVideoSize(this.qtubeVideoEditingObject.videoReference)
+            if (!confirm("This may require downloading the video file.\n\n"
+                         + "\t video file size is: " + this.$qordial.formatBytes(size) + "\n\n"
+                         + "Are you sure you want to do that?")) {
+                return
+            }
+
+            // fetch video blob
+            const blob = await this.$refs.downloader.fetchResource(
+                this.qtubeVideoEditingObject.videoReference)
+
+            // update magic URL to begin frame extraction
+            this.magicExtracting = true
+            this.magicFileURL = URL.createObjectURL(blob)
+        },
+
+        framesExtracted(frames) {
+            if (frames?.length) {
+                this.qtubeVideoEditingExtract1 = frames[0]
+                this.qtubeVideoEditingExtract2 = frames[1]
+                this.qtubeVideoEditingExtract3 = frames[2]
+                this.qtubeVideoEditingExtract4 = frames[3]
+                if (this.coverImageSource == 'extract1') {
+                    this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract1
+                } else if (this.coverImageSource == 'extract2') {
+                    this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract2
+                } else if (this.coverImageSource == 'extract3') {
+                    this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract3
+                } else if (this.coverImageSource == 'extract4') {
+                    this.qtubeVideoEditingObject.videoImage = this.qtubeVideoEditingExtract4
+                }
+                this.magicExtracting = false
+            }
+        },
 
         async qtubeVideosRefresh() {
             this.qtubeVideosLoading = true
@@ -60,26 +120,24 @@ export default {
             this.qtubeVideosLoading = false
         },
 
+        async fetchVideoSize(resource) {
+            const response = await qortalRequest({
+                action: 'LIST_QDN_RESOURCES',
+                service: 'VIDEO',
+                name: resource.name,
+                identifier: resource.identifier,
+            })
+            if (response.length) {
+                return response[0].size
+            }
+        },
+
         async showQtubeVideoDocument(resource) {
             this.qtubeVideoDocumentResource = resource
             this.qtubeVideoDocument = await this.$qordial.fetchResourceObject(resource)
             this.qtubeVideoShowJSON = false
-            this.qtubeVideoFileSize = null
-            const vidref = this.qtubeVideoDocument?.videoReference
-
-            // must fetch file size from VIDEO resource
-            if (vidref?.name && vidref?.identifier) {
-                const response = await qortalRequest({
-                    action: 'LIST_QDN_RESOURCES',
-                    service: 'VIDEO',
-                    name: vidref.name,
-                    identifier: vidref.identifier,
-                })
-                if (response.length) {
-                    this.qtubeVideoFileSize = response[0].size
-                }
-            }
-
+            this.qtubeVideoFileSize = await this.fetchVideoSize(
+                this.qtubeVideoDocument?.videoReference)
             this.qtubeVideoShowDocument = true
         },
 
@@ -99,6 +157,8 @@ export default {
                 this.qtubeVideoEditingObject = await this.$qordial.fetchResourceObject(resource)
                 this.qtubeVideoEditingIdentifierSuffix = null
 
+                this.coverImageSource = 'other'
+                this.coverImageOther = this.qtubeVideoEditingObject?.videoImage
                 this.qtubeVideoEditingExtract1 = this.qtubeVideoEditingObject?.extracts?.[0] || null
                 this.qtubeVideoEditingExtract2 = this.qtubeVideoEditingObject?.extracts?.[1] || null
                 this.qtubeVideoEditingExtract3 = this.qtubeVideoEditingObject?.extracts?.[2] || null
@@ -122,6 +182,8 @@ export default {
                     },
                 }
 
+                this.coverImageSource = 'extract1'
+                this.coverImageOther = null
                 this.qtubeVideoEditingExtract1 = null
                 this.qtubeVideoEditingExtract2 = null
                 this.qtubeVideoEditingExtract3 = null
@@ -261,6 +323,8 @@ export default {
 <template>
   <div>
     <ResourceDownloader ref="downloader" />
+    <FrameExtractor :video-source="magicFileURL"
+                    @frames-extracted="framesExtracted" />
 
     <o-field grouped>
       <o-field label="Name">
@@ -434,7 +498,7 @@ export default {
         </div>
       </o-modal>
 
-      <o-modal v-model:active="qtubeVideoEditing">
+      <o-modal v-model:active="qtubeVideoEditing" cancelable="escape,x">
         <div ref="qtubeEditTop"></div>
         <div class="card">
 
@@ -475,17 +539,44 @@ export default {
               <o-input v-model="qtubeVideoEditingObject.videoType" />
             </o-field>
 
-            <QtubeImagePicker label="Video Image"
-                              v-model="qtubeVideoEditingObject.videoImage" />
+            <o-field grouped>
+              <o-field label="Cover Image Source">
+                <o-select v-model="coverImageSource">
+                  <option value="extract1">Extract #1</option>
+                  <option value="extract2">Extract #2</option>
+                  <option value="extract3">Extract #3</option>
+                  <option value="extract4">Extract #4</option>
+                  <option value="other">Other</option>
+                </o-select>
+              </o-field>
+              <QtubeVideoThumbnail :video-image="qtubeVideoEditingObject.videoImage" />
+            </o-field>
+
+            <QtubeImagePicker v-show="coverImageSource == 'other'"
+                              label="Cover Image"
+                              v-model="coverImageOther"
+                              @update:model-value="img => qtubeVideoEditingObject.videoImage = img" />
+
+            <div class="block has-text-centered">
+              <o-button variant="primary"
+                        @click="magicExtract()"
+                        :disabled="magicExtracting">
+                {{ magicExtracting ? "Working, please wait..." : "Magically extract images from the video file" }}
+              </o-button>
+            </div>
 
             <QtubeImagePicker label="Extract #1"
-                              v-model="qtubeVideoEditingExtract1" />
+                              v-model="qtubeVideoEditingExtract1"
+                              :disabled="magicExtracting" />
             <QtubeImagePicker label="Extract #2"
-                              v-model="qtubeVideoEditingExtract2" />
+                              v-model="qtubeVideoEditingExtract2"
+                              :disabled="magicExtracting" />
             <QtubeImagePicker label="Extract #3"
-                              v-model="qtubeVideoEditingExtract3" />
+                              v-model="qtubeVideoEditingExtract3"
+                              :disabled="magicExtracting" />
             <QtubeImagePicker label="Extract #4"
-                              v-model="qtubeVideoEditingExtract4" />
+                              v-model="qtubeVideoEditingExtract4"
+                              :disabled="magicExtracting" />
 
             <div v-if="!qtubeVideoEditingResourceName"
                  style="display: flex; gap: 1rem; width: 100%;">

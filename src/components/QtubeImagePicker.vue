@@ -11,6 +11,9 @@ export default {
             type: String,
             default: "Image File",
         },
+        disabled: {
+            type: Boolean,
+        },
     },
 
     emits: ['update:modelValue'],
@@ -80,7 +83,8 @@ export default {
       <div style="display: flex;">
       <o-upload v-model="imageFile"
                 @update:model-value="encodeImage()">
-        <o-button tag="a" variant="primary">
+        <o-button tag="a" variant="primary"
+                  :disabled="disabled">
           <o-icon icon="file" />
           <span>Choose</span>
         </o-button>
@@ -97,7 +101,7 @@ export default {
     </o-field>
 
     <div v-if="modelValue">
-      <QtubeVideoThumbnail :src="modelValue" />
+      <QtubeVideoThumbnail :video-image="modelValue" />
     </div>
 
   </div>

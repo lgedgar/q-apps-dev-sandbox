@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Proper "view Q-Tube video" dialog, to display basic details.
-- New "edit video" dialog for existing Q-Tube metadata.
+- New "edit video" dialog for existing Q-Tube metadata, w/ frame extraction.
 - New components:
   - QtubeVideoThumbnail
   - QtubeImagePicker
+  - FrameExtractor
 - Add `OPEN_NEW_TAB` action for qortalRequest sandbox page.
 
 ### Changed
