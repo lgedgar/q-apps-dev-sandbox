@@ -121,14 +121,16 @@ export default {
         },
 
         async fetchVideoSize(resource) {
-            const response = await qortalRequest({
-                action: 'LIST_QDN_RESOURCES',
-                service: 'VIDEO',
-                name: resource.name,
-                identifier: resource.identifier,
-            })
-            if (response.length) {
-                return response[0].size
+            if (resource) {
+                const response = await qortalRequest({
+                    action: 'LIST_QDN_RESOURCES',
+                    service: 'VIDEO',
+                    name: resource.name,
+                    identifier: resource.identifier,
+                })
+                if (response.length) {
+                    return response[0].size
+                }
             }
         },
 
