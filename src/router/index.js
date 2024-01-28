@@ -27,6 +27,11 @@ const router = createRouter({
       component: QDNView,
     },
     {
+      path: '/experimental/',
+      name: 'experimental',
+      component: () => import('../views/ExperimentalView.vue'),
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),

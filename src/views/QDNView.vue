@@ -1,6 +1,5 @@
 <script setup>
 import PublishQdnResource from '../components/PublishQdnResource.vue'
-import QTube from '../components/QTube.vue'
 import {PrettyBytes, PrettyIdentifier, PrettyTime, ResourceDownloader} from 'qordial'
 </script>
 
@@ -252,10 +251,6 @@ export default {
 
       <o-tab-item :value="1" label="PUBLISH_QDN_RESOURCE">
         <PublishQdnResource :services="services" />
-      </o-tab-item>
-
-      <o-tab-item :value="2" label="Q-Tube">
-        <QTube />
       </o-tab-item>
 
     </o-tabs>

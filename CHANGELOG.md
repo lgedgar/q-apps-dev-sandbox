@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- New pages:
+  - "Experimental" - to contain various things in development, for
+    showcase and/or testing etc.
+- New components:
+  - QtubeVideoList
+  - QtubeVideoDialog
+  - QtubeHome (playing with home page ideas)
+- Give a way to see which VIDEO resources are *not* yet in Q-Tube.
+
+### Changed
+
+- Renamed the QtubeAdmin component and moved it to the Experimental page.
+- Refactor the QtubeAdmin component per the new components added.
+- Added `bordered` prop for QtubeVideoThumbnail component.
+
 ## 0.1.5 - 2024-01-25
 
 ### Fixed

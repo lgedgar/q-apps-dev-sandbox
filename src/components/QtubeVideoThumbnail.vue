@@ -4,14 +4,15 @@
 // https://github.com/Qortal/q-tube/blob/469688b4e04bda17f44bf0df7998fc4e75b4410c/src/pages/Home/VideoCardImageContainer.tsx
 
 export default {
+
     props: {
-        videoImage: {
-            type: String,
-            required: true,
-        },
+        videoImage: undefined,
         frameImages: {
             type: Array,
             default: [],
+        },
+        bordered: {
+            type: Boolean,
         },
     },
 
@@ -56,6 +57,33 @@ export default {
 </script>
 
 <template>
-  <img ref="img" :src="src"
-       style="max-height: 150px; max-width: 266px;" />
+  <div class="thumbnail-wrapper"
+       :style="{border: bordered ? '1px solid gray' : null}">
+    <img ref="img" :src="src" />
+    <o-skeleton v-if="!videoImage"
+                height="150" width="266"
+                :animated="videoImage === undefined" />
+  </div>
 </template>
+
+<style scoped>
+
+.thumbnail-wrapper {
+    height: 150px;
+    width: 266px;
+    background-color: lightgray;
+    /* border: 1px solid gray; */
+    /* border-radius: 0.5rem; */
+    display: flex;
+    align-items: center;
+}
+
+img {
+    /* border-radius: 0.5rem; */
+    display: block;
+    margin: auto;
+    max-height: 150px;
+    max-width: 266px;
+}
+
+</style>

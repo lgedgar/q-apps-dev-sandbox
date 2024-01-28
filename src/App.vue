@@ -107,7 +107,7 @@ export default {
       <o-button :variant="qordialAuthStore.username ? 'primary' : null"
                 icon-left="user"
                 @click="onAuthButtonClick">
-        {{ qordialAuthStore.username || "please authenticate" }}
+        {{ qordialAuthStore.username || "not authenticated" }}
       </o-button>
 
     </div>
@@ -116,6 +116,7 @@ export default {
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/qortalRequest/"><span class="is-family-code">qortalRequest()</span></RouterLink>
       <RouterLink to="/QDN/">QDN</RouterLink>
+      <RouterLink to="/experimental/">Experimental</RouterLink>
       <RouterLink to="/settings">Settings</RouterLink>
       <RouterLink to="/about">About</RouterLink>
     </nav>
