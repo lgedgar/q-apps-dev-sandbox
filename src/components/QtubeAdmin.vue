@@ -60,10 +60,6 @@ export default {
 
     computed: {
         ...mapStores(useQordialAuthStore),
-
-        qtubeVideoEditingHtmlDescription() {
-            return this.$refs.qtubeVideoEditingDescriptionSafe.innerHTML
-        },
     },
 
     mounted() {
@@ -106,6 +102,18 @@ export default {
     },
 
     methods: {
+
+        qtubeVideoGetHtmlDescription() {
+            let lines = this.qtubeVideoEditingObject.fullDescription.split('\n\n')
+            lines = lines.map(line => {
+                // escape all html chars to hopefully make input safe
+                // cf. https://stackoverflow.com/a/22706073
+                line = new Option(line).innerHTML
+                line = line.replace('\n', '<br />')
+                return `<p>${line}</p>`
+            })
+            return lines.join('\n')
+        },
 
         async rebuildQtubeCache() {
             this.qtubeVideoCacheBuilding = true
@@ -355,7 +363,7 @@ export default {
 
             const metadata = {
                 ...this.qtubeVideoEditingObject,
-                htmlDescription: this.qtubeVideoEditingHtmlDescription,
+                htmlDescription: this.qtubeVideoGetHtmlDescription(),
             }
             if (extracts.length) {
                 metadata.extracts = extracts
@@ -513,11 +521,6 @@ export default {
               <o-input v-model="qtubeVideoEditingObject.fullDescription"
                        type="textarea" />
             </o-field>
-            <!-- TODO: is this trick actually enough to sanitize input? -->
-            <div ref="qtubeVideoEditingDescriptionSafe"
-                 style="display: none;"
-                 v-html="`<p>${qtubeVideoEditingObject.fullDescription}</p>`">
-            </div>
 
             <o-field label="MIME Type">
               <o-input v-model="qtubeVideoEditingObject.videoType" />

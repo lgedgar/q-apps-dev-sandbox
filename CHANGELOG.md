@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Fix how html description is built for Q-Tube publishing.
+
 ## 0.1.6 - 2024-01-27
 
 ### Added
