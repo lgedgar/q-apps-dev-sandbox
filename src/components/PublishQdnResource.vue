@@ -24,7 +24,6 @@ export default {
             payloadType: 'text',
             payloadText: null,
             payloadFile: null,
-            base64: false,
             payloadIsBase64: false,
             publishing: false,
             publishPending: false,
@@ -33,6 +32,17 @@ export default {
     },
 
     methods: {
+
+        clearForm() {
+            this.service = 'DOCUMENT'
+            this.identifier = null
+            this.payloadType = 'text'
+            this.payloadText = null
+            this.payloadFile = null
+            this.payloadIsBase64 = false
+            this.publishPending = false
+            this.publishSuccess = false
+        },
 
         markPending() {
             this.publishSuccess = false
@@ -88,19 +98,6 @@ export default {
 
 <template>
   <div>
-    <o-loading v-model:active="publishing" full-page>
-      <div class="card" style="min-width: 50rem;">
-        <div class="card-header">
-          <div class="card-header-title">Publish in progress...</div>
-        </div>
-        <div class="card-content">
-          <p class="block">
-            TODO: what to show here?
-          </p>
-        </div>
-      </div>
-    </o-loading>
-
     <o-field grouped>
       <o-field label="Name">
         <NameInput />
@@ -156,7 +153,10 @@ export default {
                 icon-left="save"
                 :disabled="publishing || !qordialAuthStore.username"
                 @click="publish()">
-        {{ publishing ? "Working, please wait..." : "Publish" }}
+        {{ publishing ? "Working, please wait..." : "Publish Resource" }}
+      </o-button>
+      <o-button @click="clearForm()">
+        Clear Form
       </o-button>
       <div style="width: 5rem;"></div>
       <o-notification v-if="publishPending"
