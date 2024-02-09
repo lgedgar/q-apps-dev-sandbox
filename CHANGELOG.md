@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.8 - 2024-02-09
+
+- Add button to clear form for `PUBLISH_QDN_RESOURCE` tab.
+
 ## 0.1.7 - 2024-02-06
 
 ### Changed
