@@ -1,9 +1,8 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import { mapStores } from 'pinia'
-import {useQordialAuthStore} from 'qordial'
+import { useQordialAuthStore, AppFeedback } from 'qordial'
 import {useAppSettingsStore} from './stores/settings'
-import Feedback from './components/Feedback.vue'
 </script>
 
 <script>
@@ -102,7 +101,7 @@ export default {
         Q-Sandbox
       </o-button>
 
-      <Feedback />
+      <app-feedback appname="edbob" />
 
       <o-button :variant="qordialAuthStore.username ? 'primary' : null"
                 icon-left="user"
