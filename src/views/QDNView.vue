@@ -1,6 +1,6 @@
 <script setup>
 import PublishQdnResource from '../components/PublishQdnResource.vue'
-import {PrettyBytes, PrettyIdentifier, PrettyTime, ResourceDownloader} from 'qordial'
+import {PrettyBytes, PrettyIdentifier, PrettyTime, CopyableText, JsonModal, ResourceDownloader} from 'qordial'
 </script>
 
 <script>
@@ -69,6 +69,14 @@ export default {
             showStatusColumn: false,
             data: null,
             searching: false,
+
+            viewSupportedServices: [
+                'BLOG_COMMENT',
+                'DOCUMENT',
+                'PLAYLIST',
+                // 'THUMBNAIL',
+            ],
+
             downloadSupportedServices: [
                 'BLOG_COMMENT',
                 'DOCUMENT',
@@ -76,6 +84,10 @@ export default {
                 'THUMBNAIL',
                 'VIDEO',
             ],
+
+            jsonModalShow: false,
+            jsonModalIdentifier: null,
+            jsonModalJSON: null,
         }
     },
 
@@ -116,6 +128,39 @@ export default {
                 action: 'OPEN_PROFILE',
                 name: name,
             })
+        },
+
+        isViewable(resource) {
+            if (this.viewSupportedServices.includes(resource.service)) {
+                return true
+            }
+            return false
+        },
+
+        async viewResource(resource) {
+            let text
+            try {
+                text = await this.$qordial.fetchResourceText(resource)
+            } catch(error) {
+                if (error.toString() == 'Error: 404 not found') {
+                    alert("Got a 404 trying to fetch that resource!")
+                    return
+                }
+                throw error
+            }
+
+            let json
+            try {
+                json = JSON.parse(text)
+
+            } catch(error) {
+                alert("TODO: viewing this resource is not yet supported :(")
+                return
+            }
+
+            this.jsonModalIdentifier = resource.identifier
+            this.jsonModalJSON = json
+            this.jsonModalShow = true
         },
 
         isDownloadable(resource) {
@@ -232,11 +277,18 @@ export default {
               </o-table-column>
               <o-table-column label="Actions"
                               v-slot="{ row }">
-                <a v-if="isDownloadable(row)"
-                   href="#" @click.prevent="downloadResource(row)">
-                  <o-icon icon="download" />
-                  <span>Download</span>
-                </a>
+                <div class="grid-actions">
+                  <a v-if="isViewable(row)"
+                     href="#" @click.prevent="viewResource(row)">
+                    <o-icon icon="eye" />
+                    <span>View</span>
+                  </a>
+                  <a v-if="isDownloadable(row)"
+                     href="#" @click.prevent="downloadResource(row)">
+                    <o-icon icon="download" />
+                    <span>Download</span>
+                  </a>
+                </div>
               </o-table-column>
             </o-table>
 
@@ -254,5 +306,32 @@ export default {
       </o-tab-item>
 
     </o-tabs>
+
+    <json-modal v-model:active="jsonModalShow"
+                :json="jsonModalJSON">
+      <template #title>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <span>View Resource as JSON</span>
+          <span>&raquo;</span>
+          <copyable-text :text="jsonModalIdentifier" />
+        </div>
+      </template>
+    </json-modal>
+
   </div>
 </template>
+<style>
+
+.grid-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.grid-actions a {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+</style>
