@@ -18,7 +18,7 @@
     "compressorjs": "^1.2.1",
     "marked": "^11.2.0",
     "pinia": "^2.1.7",
-    "qordial": "^0.1.9",
+    "qordial": "^0.1.10",
     "vue": "~3.3.11",
     "vue-router": "^4.3.2"
   },
